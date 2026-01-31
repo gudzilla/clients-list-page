@@ -22,8 +22,8 @@ interface Props {
 
 const PARTY_TYPE_OPTIONS = [
   { value: '', label: 'Все' },
-  { value: 'INDIVIDUAL', label: 'Физическое лицо' },
-  { value: 'LEGAL', label: 'Юридическое лицо' },
+  { value: 'individual', label: 'Физическое лицо' },
+  { value: 'legal', label: 'Юридическое лицо' },
 ];
 
 export function ClientsFilters({ filters, onFiltersChange }: Props) {
@@ -59,7 +59,7 @@ export function ClientsFilters({ filters, onFiltersChange }: Props) {
     });
   };
 
-  const selectedParent = clientOptions.find((c) => c.id === filters.parentClientId) || null;
+  const selectedParent = clientOptions.find((c) => c.clientId === filters.parentId) || null;
   const selectedRegion = regions.find((r) => r.id === filters.regionId) || null;
 
   return (
@@ -88,7 +88,7 @@ export function ClientsFilters({ filters, onFiltersChange }: Props) {
         onChange={(_, value) => {
           onFiltersChange({
             ...filters,
-            parentClientId: value?.id,
+            parentId: value?.clientId,
             offset: 0,
           });
         }}

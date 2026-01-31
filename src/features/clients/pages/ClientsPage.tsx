@@ -64,7 +64,7 @@ export function ClientsPage() {
   const handleSubmit = async (formData: CreateClientDto) => {
     try {
       if (editingClient) {
-        await updateMutation.mutateAsync({ id: editingClient.id, data: formData });
+        await updateMutation.mutateAsync({ id: editingClient.clientId, data: formData });
         setSnackbar({ open: true, message: 'Клиент успешно обновлен', severity: 'success' });
       } else {
         await createMutation.mutateAsync(formData);
@@ -80,7 +80,7 @@ export function ClientsPage() {
     if (!deletingClient) return;
 
     try {
-      await deleteMutation.mutateAsync(deletingClient.id);
+      await deleteMutation.mutateAsync(deletingClient.clientId);
       setSnackbar({ open: true, message: 'Клиент успешно удален', severity: 'success' });
       handleCloseDelete();
     } catch {
@@ -112,7 +112,7 @@ export function ClientsPage() {
       <ClientsFilters filters={filters} onFiltersChange={setFilters} />
 
       <ClientsTable
-        clients={data?.data || []}
+        clients={data?.items || []}
         total={data?.total || 0}
         loading={isLoading}
         filters={filters}

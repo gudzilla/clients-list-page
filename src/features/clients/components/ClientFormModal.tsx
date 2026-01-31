@@ -24,7 +24,7 @@ import type { Client, CreateClientDto, PartyType } from '../types';
 const schema = z.object({
   name: z.string().min(1, 'Название обязательно'),
   fullName: z.string().optional(),
-  partyType: z.enum(['INDIVIDUAL', 'LEGAL'], {
+  partyType: z.enum(['individual', 'legal'], {
     message: 'Выберите тип стороны',
   }),
   inn: z
@@ -34,7 +34,7 @@ const schema = z.object({
       (val) => !val || /^(\d{10}|\d{12})$/.test(val),
       'ИНН должен содержать 10 или 12 цифр'
     ),
-  parentClientId: z.string().optional(),
+  parentId: z.string().optional(),
   regionId: z.string().optional(),
 });
 
@@ -62,9 +62,9 @@ export function ClientFormModal({ open, onClose, onSubmit, client, loading }: Pr
     defaultValues: {
       name: '',
       fullName: '',
-      partyType: 'LEGAL' as PartyType,
+      partyType: 'legal' as PartyType,
       inn: '',
-      parentClientId: '',
+      parentId: '',
       regionId: '',
     },
   });
@@ -77,16 +77,16 @@ export function ClientFormModal({ open, onClose, onSubmit, client, loading }: Pr
           fullName: client.fullName || '',
           partyType: client.partyType,
           inn: client.inn || '',
-          parentClientId: client.parentClientId || '',
+          parentId: client.parentId || '',
           regionId: client.regionId || '',
         });
       } else {
         reset({
           name: '',
           fullName: '',
-          partyType: 'LEGAL',
+          partyType: 'legal',
           inn: '',
-          parentClientId: '',
+          parentId: '',
           regionId: '',
         });
       }
@@ -99,14 +99,14 @@ export function ClientFormModal({ open, onClose, onSubmit, client, loading }: Pr
       fullName: data.fullName || undefined,
       partyType: data.partyType,
       inn: data.inn || undefined,
-      parentClientId: data.parentClientId || undefined,
+      parentId: data.parentId || undefined,
       regionId: data.regionId || undefined,
     });
   };
 
   // Фильтруем опции родителя (исключаем текущего клиента)
   const filteredClientOptions = client
-    ? clientOptions.filter((c) => c.id !== client.id)
+    ? clientOptions.filter((c) => c.clientId !== client.clientId)
     : clientOptions;
 
   return (
@@ -150,8 +150,8 @@ export function ClientFormModal({ open, onClose, onSubmit, client, loading }: Pr
                 <FormControl fullWidth error={!!errors.partyType}>
                   <InputLabel>Тип стороны *</InputLabel>
                   <Select {...field} label="Тип стороны *">
-                    <MenuItem value="LEGAL">Юридическое лицо</MenuItem>
-                    <MenuItem value="INDIVIDUAL">Физическое лицо</MenuItem>
+                    <MenuItem value="legal">Юридическое лицо</MenuItem>
+                    <MenuItem value="individual">Физическое лицо</MenuItem>
                   </Select>
                   {errors.partyType && (
                     <FormHelperText>{errors.partyType.message}</FormHelperText>
@@ -175,14 +175,14 @@ export function ClientFormModal({ open, onClose, onSubmit, client, loading }: Pr
             />
 
             <Controller
-              name="parentClientId"
+              name="parentId"
               control={control}
               render={({ field }) => (
                 <Autocomplete
                   options={filteredClientOptions}
                   getOptionLabel={(option) => option.name}
-                  value={filteredClientOptions.find((c) => c.id === field.value) || null}
-                  onChange={(_, value) => field.onChange(value?.id || '')}
+                  value={filteredClientOptions.find((c) => c.clientId === field.value) || null}
+                  onChange={(_, value) => field.onChange(value?.clientId || '')}
                   onOpen={() => refetchClients()}
                   renderInput={(params) => (
                     <TextField {...params} label="Родительский клиент" />

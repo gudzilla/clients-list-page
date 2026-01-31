@@ -1,19 +1,19 @@
-export type PartyType = 'INDIVIDUAL' | 'LEGAL';
+export type PartyType = 'individual' | 'legal';
 
 export interface Client {
-  id: string;
+  clientId: string;
   name: string;
   fullName: string | null;
   partyType: PartyType;
   inn: string | null;
-  parentClientId: string | null;
+  parentId: string | null;
   regionId: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface ClientSelectOption {
-  id: string;
+  clientId: string;
   name: string;
 }
 
@@ -24,7 +24,7 @@ export interface Region {
 
 export interface ClientsFilters {
   query?: string;
-  parentClientId?: string;
+  parentId?: string;
   regionId?: string;
   partyType?: PartyType;
   limit?: number;
@@ -34,7 +34,7 @@ export interface ClientsFilters {
 }
 
 export interface PaginatedResponse<T> {
-  data: T[];
+  items: T[];
   total: number;
   limit: number;
   offset: number;
@@ -45,7 +45,7 @@ export interface CreateClientDto {
   fullName?: string;
   partyType: PartyType;
   inn?: string;
-  parentClientId?: string;
+  parentId?: string;
   regionId?: string;
 }
 

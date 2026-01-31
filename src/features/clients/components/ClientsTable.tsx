@@ -43,8 +43,8 @@ export function ClientsTable({
       renderCell: ({ value }) => (
         <Chip
           size="small"
-          label={value === 'LEGAL' ? 'Юр. лицо' : 'Физ. лицо'}
-          color={value === 'LEGAL' ? 'primary' : 'secondary'}
+          label={value === 'legal' ? 'Юр. лицо' : 'Физ. лицо'}
+          color={value === 'legal' ? 'primary' : 'secondary'}
           variant="outlined"
         />
       ),
@@ -128,6 +128,7 @@ export function ClientsTable({
       onSortModelChange={handleSortModelChange}
       pageSizeOptions={[5, 10, 25]}
       disableRowSelectionOnClick
+      getRowId={(row) => row.clientId}
       autoHeight
       sx={{ minHeight: 400 }}
     />

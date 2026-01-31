@@ -15,7 +15,7 @@ async function fetchClients(filters: ClientsFilters): Promise<PaginatedResponse<
   const params = new URLSearchParams();
 
   if (filters.query) params.set('query', filters.query);
-  if (filters.parentClientId) params.set('parentClientId', filters.parentClientId);
+  if (filters.parentId) params.set('parentId', filters.parentId);
   if (filters.regionId) params.set('regionId', filters.regionId);
   if (filters.partyType) params.set('partyType', filters.partyType);
   if (filters.limit) params.set('limit', String(filters.limit));
@@ -35,9 +35,18 @@ async function fetchClient(id: string): Promise<Client> {
 }
 
 async function fetchClientSelectOptions(): Promise<ClientSelectOption[]> {
-  const response = await fetch(`${BASE_URL}/select-options`);
+  // Используем общий список для селекта, запрашиваем достаточное количество
+  const params = new URLSearchParams({ limit: '100' });
+  const response = await fetch(`${BASE_URL}?${params}`);
+  
   if (!response.ok) throw new Error('Ошибка загрузки списка клиентов');
-  return response.json();
+  
+  const data: PaginatedResponse<Client> = await response.json();
+  
+  return data.items.map((client) => ({
+    clientId: client.clientId,
+    name: client.name,
+  }));
 }
 
 async function createClient(data: CreateClientDto): Promise<Client> {
@@ -52,7 +61,7 @@ async function createClient(data: CreateClientDto): Promise<Client> {
 
 async function updateClient({ id, data }: { id: string; data: UpdateClientDto }): Promise<Client> {
   const response = await fetch(`${BASE_URL}/${id}`, {
-    method: 'PUT',
+    method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
@@ -87,7 +96,7 @@ export function useClientSelectOptions() {
   return useQuery({
     queryKey: ['clientSelectOptions'],
     queryFn: fetchClientSelectOptions,
-    staleTime: 0,
+    staleTime: 60 * 1000, // кешируем на минуту
   });
 }
 
@@ -106,12 +115,12 @@ export function useCreateClient(currentFilters: ClientsFilters) {
 
       // Создаём оптимистичного клиента
       const optimisticClient: Client = {
-        id: `temp-${Date.now()}`,
+        clientId: `temp-${Date.now()}`,
         name: newClientData.name,
         fullName: newClientData.fullName || null,
         partyType: newClientData.partyType,
         inn: newClientData.inn || null,
-        parentClientId: newClientData.parentClientId || null,
+        parentId: newClientData.parentId || null,
         regionId: newClientData.regionId || null,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -121,7 +130,7 @@ export function useCreateClient(currentFilters: ClientsFilters) {
       if (previousData) {
         queryClient.setQueryData<PaginatedResponse<Client>>(['clients', currentFilters], {
           ...previousData,
-          data: [optimisticClient, ...previousData.data],
+          items: [optimisticClient, ...previousData.items],
           total: previousData.total + 1,
         });
       }
@@ -156,8 +165,8 @@ export function useUpdateClient(currentFilters: ClientsFilters) {
       if (previousData) {
         queryClient.setQueryData<PaginatedResponse<Client>>(['clients', currentFilters], {
           ...previousData,
-          data: previousData.data.map((client) =>
-            client.id === id
+          items: previousData.items.map((client) =>
+            client.clientId === id
               ? { ...client, ...data, updatedAt: new Date().toISOString() }
               : client
           ),
@@ -192,7 +201,7 @@ export function useDeleteClient(currentFilters: ClientsFilters) {
       if (previousData) {
         queryClient.setQueryData<PaginatedResponse<Client>>(['clients', currentFilters], {
           ...previousData,
-          data: previousData.data.filter((client) => client.id !== deletedId),
+          items: previousData.items.filter((client) => client.clientId !== deletedId),
           total: previousData.total - 1,
         });
       }
