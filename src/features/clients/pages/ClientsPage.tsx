@@ -31,7 +31,7 @@ export function ClientsPage() {
     severity: 'success',
   });
 
-  const { data, isLoading, error } = useClients(filters);
+  const { data, isFetching, error } = useClients(filters);
   const createMutation = useCreateClient(filters);
   const updateMutation = useUpdateClient(filters);
   const deleteMutation = useDeleteClient(filters);
@@ -119,7 +119,7 @@ export function ClientsPage() {
       <ClientsTable
         clients={data?.items || []}
         total={data?.total || 0}
-        loading={isLoading}
+        loading={isFetching}
         filters={filters}
         onFiltersChange={setFilters}
         onEdit={handleOpenEdit}

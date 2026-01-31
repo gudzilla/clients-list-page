@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { apiClient } from '../../../api/axiosClient';
 import type {
   Client,
@@ -53,6 +53,7 @@ export function useClients(filters: ClientsFilters) {
   return useQuery({
     queryKey: ['clients', filters],
     queryFn: () => fetchClients(filters),
+    placeholderData: keepPreviousData,
   });
 }
 
