@@ -42,11 +42,11 @@ export interface PaginatedResponse<T> {
 
 export interface CreateClientDto {
   name: string;
-  fullName?: string;
+  fullName?: string | null;
   partyType: PartyType;
-  inn?: string;
-  parentId?: string;
-  regionId?: string;
+  inn?: string | null;
+  parentId?: string | null;
+  regionId?: string | null;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type

@@ -23,20 +23,14 @@ import { useRegions } from '../services/regionsApi';
 import type { Client, CreateClientDto, PartyType, BackendErrorResponse } from '../types';
 
 const schema = z.object({
-  name: z.string().min(1, 'Название обязательно'),
-  fullName: z.string().optional(),
+  name: z.string().min(1, 'Введите название').max(255, 'До 255 символов'),
+  fullName: z.string().max(512, 'Максимум 512 символов').optional(),
   partyType: z.enum(['individual', 'legal'], {
     message: 'Выберите тип стороны',
   }),
-  inn: z
-    .string()
-    .optional()
-    .refine(
-      (val) => !val || /^(\d{10}|\d{12})$/.test(val),
-      'ИНН должен содержать 10 или 12 цифр'
-    ),
-  parentId: z.string().optional(),
-  regionId: z.string().optional(),
+  inn: z.string().max(12, 'ИНН не должен превышать 12 символов').optional(),
+  parentId: z.string().uuid().optional().or(z.literal('')),
+  regionId: z.string().uuid().optional().or(z.literal('')),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -109,11 +103,11 @@ export function ClientFormModal({ open, onClose, onSubmit, client, loading }: Pr
     try {
       await onSubmit({
         name: data.name,
-        fullName: data.fullName || undefined,
+        fullName: data.fullName || null,
         partyType: data.partyType,
-        inn: data.inn || undefined,
-        parentId: data.parentId || undefined,
-        regionId: data.regionId || undefined,
+        inn: data.inn || null,
+        parentId: data.parentId || null,
+        regionId: data.regionId || null,
       });
     } catch (error: unknown) {
       const backendError = error as BackendErrorResponse;
