@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '../../../api/axiosClient';
 import type {
   Client,
   ClientsFilters,
@@ -8,72 +9,43 @@ import type {
   ClientSelectOption,
 } from '../types';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-
 // API функции
 async function fetchClients(filters: ClientsFilters): Promise<PaginatedResponse<Client>> {
-  const params = new URLSearchParams();
-
-  if (filters.query) params.set('query', filters.query);
-  if (filters.parentId) params.set('parentId', filters.parentId);
-  if (filters.regionId) params.set('regionId', filters.regionId);
-  if (filters.partyType) params.set('partyType', filters.partyType);
-  if (filters.limit) params.set('limit', String(filters.limit));
-  if (filters.offset !== undefined) params.set('offset', String(filters.offset));
-  if (filters.sortBy) params.set('sortBy', filters.sortBy);
-  if (filters.sortOrder) params.set('sortOrder', filters.sortOrder);
-
-  const response = await fetch(`${BASE_URL}/clients?${params}`);
-  if (!response.ok) throw new Error('Ошибка загрузки клиентов');
-  return response.json();
+  const response = await apiClient.get<PaginatedResponse<Client>>('/clients', {
+    params: filters,
+  });
+  return response.data;
 }
 
 async function fetchClient(id: string): Promise<Client> {
-  const response = await fetch(`${BASE_URL}/clients/${id}`);
-  if (!response.ok) throw new Error('Клиент не найден');
-  return response.json();
+  const response = await apiClient.get<Client>(`/clients/${id}`);
+  return response.data;
 }
 
 async function fetchClientSelectOptions(): Promise<ClientSelectOption[]> {
   // Используем общий список для селекта, запрашиваем достаточное количество
-  const params = new URLSearchParams({ limit: '100' });
-  const response = await fetch(`${BASE_URL}/clients?${params}`);
+  const response = await apiClient.get<PaginatedResponse<Client>>('/clients', {
+    params: { limit: 100 },
+  });
   
-  if (!response.ok) throw new Error('Ошибка загрузки списка клиентов');
-  
-  const data: PaginatedResponse<Client> = await response.json();
-  
-  return data.items.map((client) => ({
+  return response.data.items.map((client) => ({
     clientId: client.clientId,
     name: client.name,
   }));
 }
 
 async function createClient(data: CreateClientDto): Promise<Client> {
-  const response = await fetch(`${BASE_URL}/clients`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) throw new Error('Ошибка создания клиента');
-  return response.json();
+  const response = await apiClient.post<Client>('/clients', data);
+  return response.data;
 }
 
 async function updateClient({ id, data }: { id: string; data: UpdateClientDto }): Promise<Client> {
-  const response = await fetch(`${BASE_URL}/clients/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) throw new Error('Ошибка обновления клиента');
-  return response.json();
+  const response = await apiClient.patch<Client>(`/clients/${id}`, data);
+  return response.data;
 }
 
 async function deleteClient(id: string): Promise<void> {
-  const response = await fetch(`${BASE_URL}/clients/${id}`, {
-    method: 'DELETE',
-  });
-  if (!response.ok) throw new Error('Ошибка удаления клиента');
+  await apiClient.delete(`/clients/${id}`);
 }
 
 // React Query хуки

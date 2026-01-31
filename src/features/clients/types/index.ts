@@ -51,3 +51,22 @@ export interface CreateClientDto {
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface UpdateClientDto extends Partial<CreateClientDto> {}
+
+export interface ValidationErrorDetail {
+  field: string;
+  message: string;
+}
+
+export type BackendErrorName = 
+  | 'VALIDATION_ERROR'
+  | 'INTERNAL_SERVER_ERROR'
+  | 'CLIENT_NOT_FOUND'
+  | 'PARENT_CLIENT_NOT_FOUND'
+  | 'CLIENT_ALREADY_EXISTS'
+  | 'CLIENT_ALREADY_EXISTS_BY_INN';
+
+export interface BackendErrorResponse {
+  errorName: BackendErrorName;
+  message: string;
+  errors?: ValidationErrorDetail[];
+}

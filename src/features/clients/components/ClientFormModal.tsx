@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -13,13 +13,14 @@ import {
   FormHelperText,
   Autocomplete,
   Box,
+  Alert,
 } from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useClientSelectOptions } from '../services/clientsApi';
 import { useRegions } from '../services/regionsApi';
-import type { Client, CreateClientDto, PartyType } from '../types';
+import type { Client, CreateClientDto, PartyType, BackendErrorResponse } from '../types';
 
 const schema = z.object({
   name: z.string().min(1, 'Название обязательно'),
@@ -43,7 +44,7 @@ type FormData = z.infer<typeof schema>;
 interface Props {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: CreateClientDto) => void;
+  onSubmit: (data: CreateClientDto) => Promise<void>;
   client?: Client | null;
   loading?: boolean;
 }
@@ -51,11 +52,21 @@ interface Props {
 export function ClientFormModal({ open, onClose, onSubmit, client, loading }: Props) {
   const { data: clientOptions = [], refetch: refetchClients } = useClientSelectOptions();
   const { data: regions = [] } = useRegions();
+  const [genericError, setGenericError] = useState<string | null>(null);
+  const [prevOpen, setPrevOpen] = useState(open);
+
+  if (open !== prevOpen) {
+    if (open) {
+      setGenericError(null);
+    }
+    setPrevOpen(open);
+  }
 
   const {
     control,
     handleSubmit,
     reset,
+    setError,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -93,15 +104,50 @@ export function ClientFormModal({ open, onClose, onSubmit, client, loading }: Pr
     }
   }, [open, client, reset]);
 
-  const handleFormSubmit = (data: FormData) => {
-    onSubmit({
-      name: data.name,
-      fullName: data.fullName || undefined,
-      partyType: data.partyType,
-      inn: data.inn || undefined,
-      parentId: data.parentId || undefined,
-      regionId: data.regionId || undefined,
-    });
+  const handleFormSubmit = async (data: FormData) => {
+    setGenericError(null);
+    try {
+      await onSubmit({
+        name: data.name,
+        fullName: data.fullName || undefined,
+        partyType: data.partyType,
+        inn: data.inn || undefined,
+        parentId: data.parentId || undefined,
+        regionId: data.regionId || undefined,
+      });
+    } catch (error: unknown) {
+      const backendError = error as BackendErrorResponse;
+
+      if (backendError && typeof backendError === 'object' && 'errorName' in backendError) {
+        switch (backendError.errorName) {
+          case 'CLIENT_ALREADY_EXISTS':
+            setError('name', { message: backendError.message });
+            break;
+          case 'CLIENT_ALREADY_EXISTS_BY_INN':
+            setError('inn', { message: backendError.message });
+            break;
+          case 'PARENT_CLIENT_NOT_FOUND':
+             setGenericError(backendError.message);
+             break;
+          case 'VALIDATION_ERROR':
+            if (backendError.errors) {
+              backendError.errors.forEach((err) => {
+                const fieldName = err.field.split('.').pop() as keyof FormData;
+                if (fieldName) {
+                   setError(fieldName, { message: err.message });
+                }
+              });
+            } else {
+              setGenericError(backendError.message);
+            }
+            break;
+          default:
+            setGenericError(backendError.message || 'Произошла ошибка сервера');
+        }
+      } else {
+        setGenericError('Произошла непредвиденная ошибка');
+      }
+    }
   };
 
   // Фильтруем опции родителя (исключаем текущего клиента)
@@ -117,6 +163,11 @@ export function ClientFormModal({ open, onClose, onSubmit, client, loading }: Pr
         </DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+            {genericError && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {genericError}
+              </Alert>
+            )}
             <Controller
               name="name"
               control={control}

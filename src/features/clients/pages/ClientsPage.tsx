@@ -11,7 +11,7 @@ import {
   useUpdateClient,
   useDeleteClient,
 } from '../services/clientsApi';
-import type { Client, ClientsFilters as FiltersType, CreateClientDto } from '../types';
+import type { Client, ClientsFilters as FiltersType, CreateClientDto, BackendErrorResponse } from '../types';
 
 export function ClientsPage() {
   const [filters, setFilters] = useState<FiltersType>({
@@ -25,7 +25,7 @@ export function ClientsPage() {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingClient, setDeletingClient] = useState<Client | null>(null);
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' }>({
     open: false,
     message: '',
     severity: 'success',
@@ -62,18 +62,14 @@ export function ClientsPage() {
   };
 
   const handleSubmit = async (formData: CreateClientDto) => {
-    try {
-      if (editingClient) {
-        await updateMutation.mutateAsync({ id: editingClient.clientId, data: formData });
-        setSnackbar({ open: true, message: 'Клиент успешно обновлен', severity: 'success' });
-      } else {
-        await createMutation.mutateAsync(formData);
-        setSnackbar({ open: true, message: 'Клиент успешно создан', severity: 'success' });
-      }
-      handleCloseForm();
-    } catch {
-      setSnackbar({ open: true, message: 'Произошла ошибка', severity: 'error' });
+    if (editingClient) {
+      await updateMutation.mutateAsync({ id: editingClient.clientId, data: formData });
+      setSnackbar({ open: true, message: 'Клиент успешно обновлен', severity: 'success' });
+    } else {
+      await createMutation.mutateAsync(formData);
+      setSnackbar({ open: true, message: 'Клиент успешно создан', severity: 'success' });
     }
+    handleCloseForm();
   };
 
   const handleConfirmDelete = async () => {
@@ -83,8 +79,17 @@ export function ClientsPage() {
       await deleteMutation.mutateAsync(deletingClient.clientId);
       setSnackbar({ open: true, message: 'Клиент успешно удален', severity: 'success' });
       handleCloseDelete();
-    } catch {
-      setSnackbar({ open: true, message: 'Ошибка удаления клиента', severity: 'error' });
+    } catch (error: unknown) {
+      const backendError = error as BackendErrorResponse;
+      // Если клиент уже удален (404), считаем это успехом с точки зрения UI
+      if (backendError && typeof backendError === 'object' && 'errorName' in backendError && backendError.errorName === 'CLIENT_NOT_FOUND') {
+        setSnackbar({ open: true, message: 'Клиент уже был удален', severity: 'info' });
+        handleCloseDelete();
+        // Нужно обновить список, но мутация invalidateQueries делается в onSettled, так что список обновится.
+        return;
+      }
+      const message = backendError?.message || 'Ошибка удаления клиента';
+      setSnackbar({ open: true, message, severity: 'error' });
     }
   };
 
