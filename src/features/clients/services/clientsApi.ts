@@ -8,7 +8,7 @@ import type {
   ClientSelectOption,
 } from '../types';
 
-const BASE_URL = '/api/clients';
+const BASE_URL = 'http://localhost:8000/api/clients';
 
 // API функции
 async function fetchClients(filters: ClientsFilters): Promise<PaginatedResponse<Client>> {

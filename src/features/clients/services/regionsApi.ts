@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { Region } from '../types';
 
 async function fetchRegions(): Promise<Region[]> {
-  const response = await fetch('/api/regions');
+  const response = await fetch('http://localhost:8000/api/regions');
   if (!response.ok) throw new Error('Ошибка загрузки регионов');
   const data = await response.json();
   return data.items;
