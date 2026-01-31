@@ -19,22 +19,13 @@ const theme = createTheme({
   },
 });
 
-async function enableMocking() {
-  const { worker } = await import('./mocks/browser');
-  return worker.start({
-    onUnhandledRequest: 'bypass',
-  });
-}
-
-enableMocking().then(() => {
-  createRoot(document.getElementById('root')!).render(
-    <StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider theme={theme}>
-          <CssBaseline />
-          <App />
-        </ThemeProvider>
-      </QueryClientProvider>
-    </StrictMode>
-  );
-});
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <App />
+      </ThemeProvider>
+    </QueryClientProvider>
+  </StrictMode>
+);

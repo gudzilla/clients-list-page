@@ -8,7 +8,6 @@ Frontend-приложение для управления клиентами.
 - **MUI** (Material UI) - компоненты UI
 - **TanStack Query** - кэширование и синхронизация данных
 - **React Hook Form** + **Zod** - формы и валидация
-- **MSW** (Mock Service Worker) - моки API
 
 ## Установка и запуск
 
@@ -36,13 +35,9 @@ src/
       regionsApi.ts           # хук для регионов
     types/
       index.ts                # TypeScript типы
-  mocks/
-    handlers.ts               # MSW handlers для API
-    data.ts                   # seed данные
-    browser.ts                # настройка MSW
 ```
 
-## API эндпоинты (мокированы через MSW)
+## API эндпоинты
 
 | Метод  | URL                         | Описание                    |
 | ------ | --------------------------- | --------------------------- |
