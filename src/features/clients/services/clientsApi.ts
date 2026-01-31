@@ -8,7 +8,7 @@ import type {
   ClientSelectOption,
 } from '../types';
 
-const BASE_URL = 'http://localhost:8000/api/clients';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
 // API функции
 async function fetchClients(filters: ClientsFilters): Promise<PaginatedResponse<Client>> {
@@ -23,13 +23,13 @@ async function fetchClients(filters: ClientsFilters): Promise<PaginatedResponse<
   if (filters.sortBy) params.set('sortBy', filters.sortBy);
   if (filters.sortOrder) params.set('sortOrder', filters.sortOrder);
 
-  const response = await fetch(`${BASE_URL}?${params}`);
+  const response = await fetch(`${BASE_URL}/clients?${params}`);
   if (!response.ok) throw new Error('Ошибка загрузки клиентов');
   return response.json();
 }
 
 async function fetchClient(id: string): Promise<Client> {
-  const response = await fetch(`${BASE_URL}/${id}`);
+  const response = await fetch(`${BASE_URL}/clients/${id}`);
   if (!response.ok) throw new Error('Клиент не найден');
   return response.json();
 }
@@ -37,7 +37,7 @@ async function fetchClient(id: string): Promise<Client> {
 async function fetchClientSelectOptions(): Promise<ClientSelectOption[]> {
   // Используем общий список для селекта, запрашиваем достаточное количество
   const params = new URLSearchParams({ limit: '100' });
-  const response = await fetch(`${BASE_URL}?${params}`);
+  const response = await fetch(`${BASE_URL}/clients?${params}`);
   
   if (!response.ok) throw new Error('Ошибка загрузки списка клиентов');
   
@@ -50,7 +50,7 @@ async function fetchClientSelectOptions(): Promise<ClientSelectOption[]> {
 }
 
 async function createClient(data: CreateClientDto): Promise<Client> {
-  const response = await fetch(BASE_URL, {
+  const response = await fetch(`${BASE_URL}/clients`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -60,7 +60,7 @@ async function createClient(data: CreateClientDto): Promise<Client> {
 }
 
 async function updateClient({ id, data }: { id: string; data: UpdateClientDto }): Promise<Client> {
-  const response = await fetch(`${BASE_URL}/${id}`, {
+  const response = await fetch(`${BASE_URL}/clients/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -70,7 +70,7 @@ async function updateClient({ id, data }: { id: string; data: UpdateClientDto })
 }
 
 async function deleteClient(id: string): Promise<void> {
-  const response = await fetch(`${BASE_URL}/${id}`, {
+  const response = await fetch(`${BASE_URL}/clients/${id}`, {
     method: 'DELETE',
   });
   if (!response.ok) throw new Error('Ошибка удаления клиента');
