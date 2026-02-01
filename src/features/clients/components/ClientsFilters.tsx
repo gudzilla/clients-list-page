@@ -36,7 +36,8 @@ export function ClientsFilters({ filters, onFiltersChange }: Props) {
     setSearchQuery(filters.query || '');
   }
 
-  const { data: clientOptions = [], refetch: refetchClients } = useClientSelectOptions();
+  const { data: clientOptions = [], refetch: refetchClients } =
+    useClientSelectOptions();
   const { data: regions = [] } = useRegions();
 
   const handleSearch = () => {
@@ -59,7 +60,8 @@ export function ClientsFilters({ filters, onFiltersChange }: Props) {
     });
   };
 
-  const selectedParent = clientOptions.find((c) => c.clientId === filters.parentId) || null;
+  const selectedParent =
+    clientOptions.find((c) => c.clientId === filters.parentId) || null;
   const selectedRegion = regions.find((r) => r.id === filters.regionId) || null;
 
   return (

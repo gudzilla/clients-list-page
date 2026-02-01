@@ -28,8 +28,8 @@ export function DeleteConfirmDialog({
       <DialogTitle>Удаление клиента</DialogTitle>
       <DialogContent>
         <DialogContentText>
-          Вы уверены, что хотите удалить клиента "{client?.name}"?
-          Это действие нельзя отменить.
+          Вы уверены, что хотите удалить клиента "{client?.name}"? Это действие
+          нельзя отменить.
         </DialogContentText>
       </DialogContent>
       <DialogActions>

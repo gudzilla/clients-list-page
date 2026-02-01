@@ -58,7 +58,9 @@ export function ClientsTable({
     });
   };
 
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChangeRowsPerPage = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const newLimit = parseInt(event.target.value, 10);
     onFiltersChange({
       ...filters,
@@ -70,7 +72,7 @@ export function ClientsTable({
   return (
     <Paper sx={{ width: '100%', overflow: 'hidden' }}>
       {loading && <LinearProgress />}
-      
+
       <TableContainer sx={{ maxHeight: 600 }}>
         <Table stickyHeader size="medium">
           <TableHead>
@@ -78,7 +80,9 @@ export function ClientsTable({
               <TableCell>
                 <TableSortLabel
                   active={filters.sortBy === 'name'}
-                  direction={filters.sortBy === 'name' ? filters.sortOrder : 'asc'}
+                  direction={
+                    filters.sortBy === 'name' ? filters.sortOrder : 'asc'
+                  }
                   onClick={() => handleRequestSort('name')}
                 >
                   Название
@@ -87,7 +91,9 @@ export function ClientsTable({
               <TableCell>
                 <TableSortLabel
                   active={filters.sortBy === 'fullName'}
-                  direction={filters.sortBy === 'fullName' ? filters.sortOrder : 'asc'}
+                  direction={
+                    filters.sortBy === 'fullName' ? filters.sortOrder : 'asc'
+                  }
                   onClick={() => handleRequestSort('fullName')}
                 >
                   Полное название
@@ -97,7 +103,9 @@ export function ClientsTable({
               <TableCell>
                 <TableSortLabel
                   active={filters.sortBy === 'inn'}
-                  direction={filters.sortBy === 'inn' ? filters.sortOrder : 'asc'}
+                  direction={
+                    filters.sortBy === 'inn' ? filters.sortOrder : 'asc'
+                  }
                   onClick={() => handleRequestSort('inn')}
                 >
                   ИНН
@@ -106,7 +114,9 @@ export function ClientsTable({
               <TableCell>
                 <TableSortLabel
                   active={filters.sortBy === 'createdAt'}
-                  direction={filters.sortBy === 'createdAt' ? filters.sortOrder : 'asc'}
+                  direction={
+                    filters.sortBy === 'createdAt' ? filters.sortOrder : 'asc'
+                  }
                   onClick={() => handleRequestSort('createdAt')}
                 >
                   Создан
@@ -119,7 +129,10 @@ export function ClientsTable({
             {clients.length === 0 && !loading ? (
               <TableRow>
                 <TableCell colSpan={6} align="center">
-                  <Typography variant="body1" sx={{ py: 3, color: 'text.secondary' }}>
+                  <Typography
+                    variant="body1"
+                    sx={{ py: 3, color: 'text.secondary' }}
+                  >
                     Нет данных
                   </Typography>
                 </TableCell>
@@ -132,8 +145,12 @@ export function ClientsTable({
                   <TableCell>
                     <Chip
                       size="small"
-                      label={client.partyType === 'legal' ? 'Юр. лицо' : 'Физ. лицо'}
-                      color={client.partyType === 'legal' ? 'primary' : 'secondary'}
+                      label={
+                        client.partyType === 'legal' ? 'Юр. лицо' : 'Физ. лицо'
+                      }
+                      color={
+                        client.partyType === 'legal' ? 'primary' : 'secondary'
+                      }
                       variant="outlined"
                     />
                   </TableCell>
@@ -143,10 +160,18 @@ export function ClientsTable({
                   </TableCell>
                   <TableCell align="right">
                     <Box>
-                      <IconButton size="small" onClick={() => onEdit(client)} color="primary">
+                      <IconButton
+                        size="small"
+                        onClick={() => onEdit(client)}
+                        color="primary"
+                      >
                         <EditIcon fontSize="small" />
                       </IconButton>
-                      <IconButton size="small" onClick={() => onDelete(client)} color="error">
+                      <IconButton
+                        size="small"
+                        onClick={() => onDelete(client)}
+                        color="error"
+                      >
                         <DeleteIcon fontSize="small" />
                       </IconButton>
                     </Box>
@@ -157,7 +182,7 @@ export function ClientsTable({
           </TableBody>
         </Table>
       </TableContainer>
-      
+
       <TablePagination
         rowsPerPageOptions={[5, 10, 25]}
         component="div"
@@ -167,7 +192,9 @@ export function ClientsTable({
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
         labelRowsPerPage="Строк на странице:"
-        labelDisplayedRows={({ from, to, count }) => `${from}–${to} из ${count}`}
+        labelDisplayedRows={({ from, to, count }) =>
+          `${from}–${to} из ${count}`
+        }
       />
     </Paper>
   );

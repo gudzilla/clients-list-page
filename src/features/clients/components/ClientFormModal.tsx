@@ -20,7 +20,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useClientSelectOptions } from '../services/clientsApi';
 import { useRegions } from '../services/regionsApi';
-import type { Client, CreateClientDto, PartyType, BackendErrorResponse } from '../types';
+import type {
+  Client,
+  CreateClientDto,
+  PartyType,
+  BackendErrorResponse,
+} from '../types';
 
 const schema = z.object({
   name: z.string().min(1, 'Введите название').max(255, 'До 255 символов'),
@@ -43,8 +48,15 @@ interface Props {
   loading?: boolean;
 }
 
-export function ClientFormModal({ open, onClose, onSubmit, client, loading }: Props) {
-  const { data: clientOptions = [], refetch: refetchClients } = useClientSelectOptions();
+export function ClientFormModal({
+  open,
+  onClose,
+  onSubmit,
+  client,
+  loading,
+}: Props) {
+  const { data: clientOptions = [], refetch: refetchClients } =
+    useClientSelectOptions();
   const { data: regions = [] } = useRegions();
   const [genericError, setGenericError] = useState<string | null>(null);
   const [prevOpen, setPrevOpen] = useState(open);
@@ -112,7 +124,11 @@ export function ClientFormModal({ open, onClose, onSubmit, client, loading }: Pr
     } catch (error: unknown) {
       const backendError = error as BackendErrorResponse;
 
-      if (backendError && typeof backendError === 'object' && 'errorName' in backendError) {
+      if (
+        backendError &&
+        typeof backendError === 'object' &&
+        'errorName' in backendError
+      ) {
         switch (backendError.errorName) {
           case 'CLIENT_ALREADY_EXISTS':
             setError('name', { message: backendError.message });
@@ -121,14 +137,14 @@ export function ClientFormModal({ open, onClose, onSubmit, client, loading }: Pr
             setError('inn', { message: backendError.message });
             break;
           case 'PARENT_CLIENT_NOT_FOUND':
-             setGenericError(backendError.message);
-             break;
+            setGenericError(backendError.message);
+            break;
           case 'VALIDATION_ERROR':
             if (backendError.errors) {
               backendError.errors.forEach((err) => {
                 const fieldName = err.field.split('.').pop() as keyof FormData;
                 if (fieldName) {
-                   setError(fieldName, { message: err.message });
+                  setError(fieldName, { message: err.message });
                 }
               });
             } else {
@@ -180,11 +196,7 @@ export function ClientFormModal({ open, onClose, onSubmit, client, loading }: Pr
               name="fullName"
               control={control}
               render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Полное название"
-                  fullWidth
-                />
+                <TextField {...field} label="Полное название" fullWidth />
               )}
             />
 
@@ -226,7 +238,11 @@ export function ClientFormModal({ open, onClose, onSubmit, client, loading }: Pr
                 <Autocomplete
                   options={filteredClientOptions}
                   getOptionLabel={(option) => option.name}
-                  value={filteredClientOptions.find((c) => c.clientId === field.value) || null}
+                  value={
+                    filteredClientOptions.find(
+                      (c) => c.clientId === field.value
+                    ) || null
+                  }
                   onChange={(_, value) => field.onChange(value?.clientId || '')}
                   onOpen={() => refetchClients()}
                   renderInput={(params) => (
