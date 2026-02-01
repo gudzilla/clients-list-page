@@ -1,4 +1,9 @@
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+} from '@tanstack/react-query';
 import { apiClient } from '../../../api/axiosClient';
 import type {
   Client,
@@ -27,7 +32,7 @@ async function fetchClientSelectOptions(): Promise<ClientSelectOption[]> {
   const response = await apiClient.get<PaginatedResponse<Client>>('/clients', {
     params: { limit: 100 },
   });
-  
+
   return response.data.items.map((client) => ({
     clientId: client.clientId,
     name: client.name,
@@ -39,7 +44,13 @@ async function createClient(data: CreateClientDto): Promise<Client> {
   return response.data;
 }
 
-async function updateClient({ id, data }: { id: string; data: UpdateClientDto }): Promise<Client> {
+async function updateClient({
+  id,
+  data,
+}: {
+  id: string;
+  data: UpdateClientDto;
+}): Promise<Client> {
   const response = await apiClient.patch<Client>(`/clients/${id}`, data);
   return response.data;
 }
@@ -69,7 +80,7 @@ export function useClientSelectOptions() {
   return useQuery({
     queryKey: ['clientSelectOptions'],
     queryFn: fetchClientSelectOptions,
-    staleTime: 60 * 1000, // кешируем на минуту
+    staleTime: 60 * 1000, // данные считаем свежими минуту
   });
 }
 
@@ -84,7 +95,10 @@ export function useCreateClient(currentFilters: ClientsFilters) {
       await queryClient.cancelQueries({ queryKey: ['clients', currentFilters] });
 
       // Сохраняем предыдущее состояние
-      const previousData = queryClient.getQueryData<PaginatedResponse<Client>>(['clients', currentFilters]);
+      const previousData = queryClient.getQueryData<PaginatedResponse<Client>>([
+        'clients',
+        currentFilters,
+      ]);
 
       // Создаём оптимистичного клиента
       const optimisticClient: Client = {
@@ -133,7 +147,10 @@ export function useUpdateClient(currentFilters: ClientsFilters) {
     onMutate: async ({ id, data }) => {
       await queryClient.cancelQueries({ queryKey: ['clients', currentFilters] });
 
-      const previousData = queryClient.getQueryData<PaginatedResponse<Client>>(['clients', currentFilters]);
+      const previousData = queryClient.getQueryData<PaginatedResponse<Client>>([
+        'clients',
+        currentFilters,
+      ]);
 
       if (previousData) {
         queryClient.setQueryData<PaginatedResponse<Client>>(['clients', currentFilters], {
@@ -169,7 +186,10 @@ export function useDeleteClient(currentFilters: ClientsFilters) {
     onMutate: async (deletedId) => {
       await queryClient.cancelQueries({ queryKey: ['clients', currentFilters] });
 
-      const previousData = queryClient.getQueryData<PaginatedResponse<Client>>(['clients', currentFilters]);
+      const previousData = queryClient.getQueryData<PaginatedResponse<Client>>([
+        'clients',
+        currentFilters,
+      ]);
 
       if (previousData) {
         queryClient.setQueryData<PaginatedResponse<Client>>(['clients', currentFilters], {

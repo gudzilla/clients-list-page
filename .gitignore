@@ -33,5 +33,5 @@ yarn-error.log*
 
 # Project specific
 gemini.md
-server-api.md
+# server-api.md
 # server-errors.md

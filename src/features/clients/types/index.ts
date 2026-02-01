@@ -6,10 +6,10 @@ export interface Client {
   fullName: string | null;
   partyType: PartyType;
   inn: string | null;
-  parentId: string | null;
-  regionId: string | null;
   createdAt: string;
   updatedAt: string;
+  parentId: string | null;
+  regionId: string | null;
 }
 
 export interface ClientSelectOption {
@@ -57,7 +57,7 @@ export interface ValidationErrorDetail {
   message: string;
 }
 
-export type BackendErrorName = 
+export type BackendErrorName =
   | 'VALIDATION_ERROR'
   | 'INTERNAL_SERVER_ERROR'
   | 'CLIENT_NOT_FOUND'
