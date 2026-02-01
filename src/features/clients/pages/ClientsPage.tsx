@@ -32,9 +32,9 @@ export function ClientsPage() {
   });
 
   const { data, isFetching, error } = useClients(filters);
-  const createMutation = useCreateClient(filters);
-  const updateMutation = useUpdateClient(filters);
-  const deleteMutation = useDeleteClient(filters);
+  const createMutation = useCreateClient();
+  const updateMutation = useUpdateClient();
+  const deleteMutation = useDeleteClient();
 
   const handleOpenCreate = () => {
     setEditingClient(null);
@@ -85,7 +85,7 @@ export function ClientsPage() {
       if (backendError && typeof backendError === 'object' && 'errorName' in backendError && backendError.errorName === 'CLIENT_NOT_FOUND') {
         setSnackbar({ open: true, message: 'Клиент уже был удален', severity: 'info' });
         handleCloseDelete();
-        // Нужно обновить список, но мутация invalidateQueries делается в onSettled, так что список обновится.
+
         return;
       }
       const message = backendError?.message || 'Ошибка удаления клиента';

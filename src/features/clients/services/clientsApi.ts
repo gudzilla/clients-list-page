@@ -73,122 +73,41 @@ export function useClientSelectOptions() {
   });
 }
 
-// Optimistic create - добавляем клиента в начало списка мгновенно
-export function useCreateClient(currentFilters: ClientsFilters) {
+// Create client - простая мутация с инвалидацией кэша
+export function useCreateClient() {
   const queryClient = useQueryClient();
-
+  
   return useMutation({
     mutationFn: createClient,
-    onMutate: async (newClientData) => {
-      // Отменяем исходящие запросы
-      await queryClient.cancelQueries({ queryKey: ['clients', currentFilters] });
-
-      // Сохраняем предыдущее состояние
-      const previousData = queryClient.getQueryData<ClientsResponse>(['clients', currentFilters]);
-
-      // Создаём оптимистичного клиента
-      const optimisticClient: Client = {
-        clientId: `temp-${Date.now()}`,
-        name: newClientData.name,
-        fullName: newClientData.fullName || null,
-        partyType: newClientData.partyType,
-        inn: newClientData.inn || null,
-        parentId: newClientData.parentId || null,
-        regionId: newClientData.regionId || null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      // Добавляем в начало списка
-      if (previousData) {
-        queryClient.setQueryData<ClientsResponse>(['clients', currentFilters], {
-          ...previousData,
-          items: [optimisticClient, ...previousData.items],
-          total: previousData.total + 1,
-        });
-      }
-
-      return { previousData };
-    },
-    onError: (_err, _newClient, context) => {
-      // Откатываем при ошибке
-      if (context?.previousData) {
-        queryClient.setQueryData(['clients', currentFilters], context.previousData);
-      }
-    },
-    onSettled: () => {
-      // Синхронизируем с сервером
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
       queryClient.invalidateQueries({ queryKey: ['clientSelectOptions'] });
-    },
+    }
   });
 }
 
-// Optimistic update
-export function useUpdateClient(currentFilters: ClientsFilters) {
+// Update client - простая мутация с инвалидацией кэша
+export function useUpdateClient() {
   const queryClient = useQueryClient();
-
+  
   return useMutation({
     mutationFn: updateClient,
-    onMutate: async ({ id, data }) => {
-      await queryClient.cancelQueries({ queryKey: ['clients', currentFilters] });
-
-      const previousData = queryClient.getQueryData<ClientsResponse>(['clients', currentFilters]);
-
-      if (previousData) {
-        queryClient.setQueryData<ClientsResponse>(['clients', currentFilters], {
-          ...previousData,
-          items: previousData.items.map((client) =>
-            client.clientId === id
-              ? { ...client, ...data, updatedAt: new Date().toISOString() }
-              : client
-          ),
-        });
-      }
-
-      return { previousData };
-    },
-    onError: (_err, _vars, context) => {
-      if (context?.previousData) {
-        queryClient.setQueryData(['clients', currentFilters], context.previousData);
-      }
-    },
-    onSettled: () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
       queryClient.invalidateQueries({ queryKey: ['clientSelectOptions'] });
-    },
+    }
   });
 }
 
-// Optimistic delete
-export function useDeleteClient(currentFilters: ClientsFilters) {
+// Delete client - простая мутация с инвалидацией кэша
+export function useDeleteClient() {
   const queryClient = useQueryClient();
-
+  
   return useMutation({
     mutationFn: deleteClient,
-    onMutate: async (deletedId) => {
-      await queryClient.cancelQueries({ queryKey: ['clients', currentFilters] });
-
-      const previousData = queryClient.getQueryData<ClientsResponse>(['clients', currentFilters]);
-
-      if (previousData) {
-        queryClient.setQueryData<ClientsResponse>(['clients', currentFilters], {
-          ...previousData,
-          items: previousData.items.filter((client) => client.clientId !== deletedId),
-          total: previousData.total - 1,
-        });
-      }
-
-      return { previousData };
-    },
-    onError: (_err, _deletedId, context) => {
-      if (context?.previousData) {
-        queryClient.setQueryData(['clients', currentFilters], context.previousData);
-      }
-    },
-    onSettled: () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
       queryClient.invalidateQueries({ queryKey: ['clientSelectOptions'] });
-    },
+    }
   });
 }
