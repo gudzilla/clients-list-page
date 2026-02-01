@@ -1,22 +1,17 @@
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  keepPreviousData,
-} from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { apiClient } from '../../../api/axiosClient';
 import type {
   Client,
   ClientsFilters,
-  PaginatedResponse,
+  ClientsResponse,
   CreateClientDto,
   UpdateClientDto,
   ClientSelectOption,
 } from '../types';
 
 // API функции
-async function fetchClients(filters: ClientsFilters): Promise<PaginatedResponse<Client>> {
-  const response = await apiClient.get<PaginatedResponse<Client>>('/clients', {
+async function fetchClients(filters: ClientsFilters): Promise<ClientsResponse> {
+  const response = await apiClient.get<ClientsResponse>('/clients', {
     params: filters,
   });
   return response.data;
@@ -29,10 +24,10 @@ async function fetchClient(id: string): Promise<Client> {
 
 async function fetchClientSelectOptions(): Promise<ClientSelectOption[]> {
   // Используем общий список для селекта, запрашиваем достаточное количество
-  const response = await apiClient.get<PaginatedResponse<Client>>('/clients', {
+  const response = await apiClient.get<ClientsResponse>('/clients', {
     params: { limit: 100 },
   });
-
+  
   return response.data.items.map((client) => ({
     clientId: client.clientId,
     name: client.name,
@@ -44,13 +39,7 @@ async function createClient(data: CreateClientDto): Promise<Client> {
   return response.data;
 }
 
-async function updateClient({
-  id,
-  data,
-}: {
-  id: string;
-  data: UpdateClientDto;
-}): Promise<Client> {
+async function updateClient({ id, data }: { id: string; data: UpdateClientDto }): Promise<Client> {
   const response = await apiClient.patch<Client>(`/clients/${id}`, data);
   return response.data;
 }
@@ -80,7 +69,7 @@ export function useClientSelectOptions() {
   return useQuery({
     queryKey: ['clientSelectOptions'],
     queryFn: fetchClientSelectOptions,
-    staleTime: 60 * 1000, // данные считаем свежими минуту
+    staleTime: 60 * 1000, // кешируем на минуту
   });
 }
 
@@ -95,10 +84,7 @@ export function useCreateClient(currentFilters: ClientsFilters) {
       await queryClient.cancelQueries({ queryKey: ['clients', currentFilters] });
 
       // Сохраняем предыдущее состояние
-      const previousData = queryClient.getQueryData<PaginatedResponse<Client>>([
-        'clients',
-        currentFilters,
-      ]);
+      const previousData = queryClient.getQueryData<ClientsResponse>(['clients', currentFilters]);
 
       // Создаём оптимистичного клиента
       const optimisticClient: Client = {
@@ -115,7 +101,7 @@ export function useCreateClient(currentFilters: ClientsFilters) {
 
       // Добавляем в начало списка
       if (previousData) {
-        queryClient.setQueryData<PaginatedResponse<Client>>(['clients', currentFilters], {
+        queryClient.setQueryData<ClientsResponse>(['clients', currentFilters], {
           ...previousData,
           items: [optimisticClient, ...previousData.items],
           total: previousData.total + 1,
@@ -147,13 +133,10 @@ export function useUpdateClient(currentFilters: ClientsFilters) {
     onMutate: async ({ id, data }) => {
       await queryClient.cancelQueries({ queryKey: ['clients', currentFilters] });
 
-      const previousData = queryClient.getQueryData<PaginatedResponse<Client>>([
-        'clients',
-        currentFilters,
-      ]);
+      const previousData = queryClient.getQueryData<ClientsResponse>(['clients', currentFilters]);
 
       if (previousData) {
-        queryClient.setQueryData<PaginatedResponse<Client>>(['clients', currentFilters], {
+        queryClient.setQueryData<ClientsResponse>(['clients', currentFilters], {
           ...previousData,
           items: previousData.items.map((client) =>
             client.clientId === id
@@ -186,13 +169,10 @@ export function useDeleteClient(currentFilters: ClientsFilters) {
     onMutate: async (deletedId) => {
       await queryClient.cancelQueries({ queryKey: ['clients', currentFilters] });
 
-      const previousData = queryClient.getQueryData<PaginatedResponse<Client>>([
-        'clients',
-        currentFilters,
-      ]);
+      const previousData = queryClient.getQueryData<ClientsResponse>(['clients', currentFilters]);
 
       if (previousData) {
-        queryClient.setQueryData<PaginatedResponse<Client>>(['clients', currentFilters], {
+        queryClient.setQueryData<ClientsResponse>(['clients', currentFilters], {
           ...previousData,
           items: previousData.items.filter((client) => client.clientId !== deletedId),
           total: previousData.total - 1,

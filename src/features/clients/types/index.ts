@@ -33,11 +33,15 @@ export interface ClientsFilters {
   sortOrder?: 'asc' | 'desc';
 }
 
-export interface PaginatedResponse<T> {
-  items: T[];
+export interface ClientsResponse {
+  items: Client[];
   total: number;
   limit: number;
   offset: number;
+}
+
+export interface RegionsResponse {
+  items: Region[];
 }
 
 export interface CreateClientDto {
