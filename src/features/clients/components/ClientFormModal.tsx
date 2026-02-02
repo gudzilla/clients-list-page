@@ -71,10 +71,13 @@ export function ClientFormModal({
   const [parentSelectOpen, setParentSelectOpen] = useState(false);
   const [parentOptions, setParentOptions] = useState<ClientSelectOption[]>([]);
   const [parentLoading, setParentLoading] = useState(false);
+  const [selectedParentNode, setSelectedParentNode] =
+    useState<ClientSelectOption | null>(null);
 
   if (open !== prevOpen) {
     if (open) {
       setGenericError(null);
+      setSelectedParentNode(null);
     }
     setPrevOpen(open);
   }
@@ -189,7 +192,6 @@ export function ClientFormModal({
 
   const handleCloseParentSelect = () => {
     setParentSelectOpen(false);
-    setParentOptions([]);
   };
 
   return (
@@ -266,12 +268,14 @@ export function ClientFormModal({
                   open={parentSelectOpen}
                   options={parentLoading ? [] : filteredClientOptions}
                   getOptionLabel={(option) => option.name}
-                  value={
-                    filteredClientOptions.find(
-                      (c) => c.clientId === field.value
-                    ) || null
+                  isOptionEqualToValue={(option, value) =>
+                    option.clientId === value.clientId
                   }
-                  onChange={(_, value) => field.onChange(value?.clientId || '')}
+                  value={selectedParentNode}
+                  onChange={(_, value) => {
+                    setSelectedParentNode(value);
+                    field.onChange(value?.clientId || '');
+                  }}
                   onOpen={handleOpenParentSelect}
                   onClose={handleCloseParentSelect}
                   loading={parentLoading}

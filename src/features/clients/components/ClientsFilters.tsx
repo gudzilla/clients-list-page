@@ -44,6 +44,8 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
   const [parentSelectOpen, setParentSelectOpen] = useState(false);
   const [parentOptions, setParentOptions] = useState<ClientSelectOption[]>([]);
   const [parentLoading, setParentLoading] = useState(false);
+  const [selectedParentNode, setSelectedParentNode] =
+    useState<ClientSelectOption | null>(null);
 
   // Дебаунс значения (300мс)
   const debouncedQuery = useDebounce(localQuery, 500);
@@ -55,6 +57,13 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.query]);
+
+  // Сброс выбранного родителя при очистке фильтра
+  useEffect(() => {
+    if (!filters.parentId) {
+      setSelectedParentNode(null);
+    }
+  }, [filters.parentId]);
 
   // Эффект для обновления родительских фильтров при изменении дебаунс-значения
   useEffect(() => {
@@ -89,11 +98,8 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
 
   const handleCloseParentSelect = () => {
     setParentSelectOpen(false);
-    setParentOptions([]);
   };
 
-  const selectedParent =
-    parentOptions.find((c) => c.clientId === filters.parentId) || null;
   const selectedRegion = regions.find((r) => r.id === filters.regionId) || null;
 
   return (
@@ -121,8 +127,12 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
         open={parentSelectOpen}
         options={parentOptions}
         getOptionLabel={(option) => option.name}
-        value={selectedParent}
+        isOptionEqualToValue={(option, value) =>
+          option.clientId === value.clientId
+        }
+        value={selectedParentNode}
         onChange={(_, value) => {
+          setSelectedParentNode(value);
           onFiltersChange({
             ...filters,
             parentId: value?.clientId,
