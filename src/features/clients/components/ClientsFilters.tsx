@@ -30,8 +30,11 @@ const PARTY_TYPE_OPTIONS = [
 ];
 
 export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
-  const { data: clientOptions = [], refetch: refetchClients } =
-    useClientSelectOptions();
+  const {
+    mutate: fetchParentOptions,
+    data: clientOptions = [],
+    isPending,
+  } = useClientSelectOptions();
   const { data: regions = [] } = useRegions();
 
   // Локальный стейт для мновенного отображения ввода
@@ -68,6 +71,10 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
     onReset();
   };
 
+  const handleOpenParentSelect = () => {
+    fetchParentOptions();
+  };
+
   const selectedParent =
     clientOptions.find((c) => c.clientId === filters.parentId) || null;
   const selectedRegion = regions.find((r) => r.id === filters.regionId) || null;
@@ -94,7 +101,7 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
 
       <Autocomplete
         size="small"
-        options={clientOptions}
+        options={isPending ? [] : clientOptions}
         getOptionLabel={(option) => option.name}
         value={selectedParent}
         onChange={(_, value) => {
@@ -104,7 +111,7 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
             offset: 0,
           });
         }}
-        onOpen={() => refetchClients()}
+        onOpen={handleOpenParentSelect}
         renderInput={(params) => (
           <TextField {...params} label="Родительский клиент" />
         )}

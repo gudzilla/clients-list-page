@@ -77,10 +77,8 @@ export function useClient(id: string | null) {
 }
 
 export function useClientSelectOptions() {
-  return useQuery({
-    queryKey: ['clientSelectOptions'],
-    queryFn: fetchClientSelectOptions,
-    staleTime: 60 * 1000, // кешируем на минуту
+  return useMutation({
+    mutationFn: fetchClientSelectOptions,
   });
 }
 
@@ -92,7 +90,6 @@ export function useCreateClient() {
     mutationFn: createClient,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
-      queryClient.invalidateQueries({ queryKey: ['clientSelectOptions'] });
     },
   });
 }
@@ -105,7 +102,6 @@ export function useUpdateClient() {
     mutationFn: updateClient,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
-      queryClient.invalidateQueries({ queryKey: ['clientSelectOptions'] });
     },
   });
 }
@@ -118,7 +114,6 @@ export function useDeleteClient() {
     mutationFn: deleteClient,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
-      queryClient.invalidateQueries({ queryKey: ['clientSelectOptions'] });
     },
   });
 }

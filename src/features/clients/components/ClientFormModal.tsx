@@ -61,8 +61,11 @@ export function ClientFormModal({
   client,
   loading,
 }: Props) {
-  const { data: clientOptions = [], refetch: refetchClients } =
-    useClientSelectOptions();
+  const {
+    mutate: fetchParentOptions,
+    data: clientOptions = [],
+    isPending,
+  } = useClientSelectOptions();
   const { data: regions = [] } = useRegions();
   const [genericError, setGenericError] = useState<string | null>(null);
   const [prevOpen, setPrevOpen] = useState(open);
@@ -85,7 +88,7 @@ export function ClientFormModal({
     defaultValues: {
       name: '',
       fullName: '',
-      partyType: 'legal' as PartyType,
+      partyType: 'individual' as PartyType,
       inn: '',
       parentId: '',
       regionId: '',
@@ -171,6 +174,10 @@ export function ClientFormModal({
     ? clientOptions.filter((c) => c.clientId !== client.clientId)
     : clientOptions;
 
+  const handleOpenParentSelect = () => {
+    fetchParentOptions();
+  };
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <form onSubmit={handleSubmit(handleFormSubmit)}>
@@ -242,7 +249,7 @@ export function ClientFormModal({
               control={control}
               render={({ field }) => (
                 <Autocomplete
-                  options={filteredClientOptions}
+                  options={isPending ? [] : filteredClientOptions}
                   getOptionLabel={(option) => option.name}
                   value={
                     filteredClientOptions.find(
@@ -250,7 +257,8 @@ export function ClientFormModal({
                     ) || null
                   }
                   onChange={(_, value) => field.onChange(value?.clientId || '')}
-                  onOpen={() => refetchClients()}
+                  onOpen={handleOpenParentSelect}
+                  disabled={isPending}
                   renderInput={(params) => (
                     <TextField {...params} label="Родительский клиент" />
                   )}
