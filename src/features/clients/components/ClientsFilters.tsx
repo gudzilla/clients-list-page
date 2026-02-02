@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   TextField,
@@ -8,11 +8,13 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  InputAdornment,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import { useClientSelectOptions } from '../services/clientsApi';
 import { useRegions } from '../services/regionsApi';
+import { useDebounce } from '../../../hooks/useDebounce';
 import type { ClientsFilters as FiltersType, PartyType } from '../types';
 
 interface Props {
@@ -27,31 +29,42 @@ const PARTY_TYPE_OPTIONS = [
 ];
 
 export function ClientsFilters({ filters, onFiltersChange }: Props) {
-  const [searchQuery, setSearchQuery] = useState(filters.query || '');
-  const [prevFiltersQuery, setPrevFiltersQuery] = useState(filters.query);
-
-  // Синхронизируем локальный state при внешнем сбросе фильтров
-  if (filters.query !== prevFiltersQuery) {
-    setPrevFiltersQuery(filters.query);
-    setSearchQuery(filters.query || '');
-  }
-
   const { data: clientOptions = [], refetch: refetchClients } =
     useClientSelectOptions();
   const { data: regions = [] } = useRegions();
 
-  const handleSearch = () => {
-    onFiltersChange({ ...filters, query: searchQuery, offset: 0 });
-  };
+  // Локальный стейт для мновенного отображения ввода
+  const [localQuery, setLocalQuery] = useState(filters.query || '');
+
+  // Дебаунс значения (300мс)
+  const debouncedQuery = useDebounce(localQuery, 500);
+
+  // Синхронизация локального стейта при изменении фильтров извне (например, сброс)
+  useEffect(() => {
+    if (filters.query !== localQuery) {
+      setLocalQuery(filters.query || '');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.query]);
+
+  // Эффект для обновления родительских фильтров при изменении дебаунс-значения
+  useEffect(() => {
+    // Обновляем только если значение отличается от текущего в фильтрах
+    if (debouncedQuery !== (filters.query || '')) {
+      onFiltersChange({ ...filters, query: debouncedQuery, offset: 0 });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedQuery]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      handleSearch();
+      // Мгновенный поиск по Enter (игнорируя дебаунс)
+      onFiltersChange({ ...filters, query: localQuery, offset: 0 });
     }
   };
 
   const handleReset = () => {
-    setSearchQuery('');
+    setLocalQuery(''); // Сбрасываем локально сразу
     onFiltersChange({
       limit: filters.limit,
       offset: 0,
@@ -69,18 +82,20 @@ export function ClientsFilters({ filters, onFiltersChange }: Props) {
       <TextField
         size="small"
         placeholder="Поиск по названию..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
+        value={localQuery}
+        onChange={(e) => setLocalQuery(e.target.value)}
         onKeyDown={handleKeyDown}
-        sx={{ minWidth: 200 }}
+        slotProps={{
+          input: {
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon color="action" />
+              </InputAdornment>
+            ),
+          },
+        }}
+        sx={{ minWidth: 250 }}
       />
-      <Button
-        variant="contained"
-        startIcon={<SearchIcon />}
-        onClick={handleSearch}
-      >
-        Искать
-      </Button>
 
       <Autocomplete
         size="small"

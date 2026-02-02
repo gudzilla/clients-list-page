@@ -28,14 +28,20 @@ import type {
 } from '../types';
 
 const schema = z.object({
-  name: z.string().min(1, 'Введите название').max(255, 'До 255 символов'),
-  fullName: z.string().max(512, 'Максимум 512 символов').optional(),
+  name: z.string().min(1, 'Введите название').max(255),
+  fullName: z.string().max(255).optional(),
   partyType: z.enum(['individual', 'legal'], {
     message: 'Выберите тип стороны',
   }),
-  inn: z.string().max(12, 'ИНН не должен превышать 12 символов').optional(),
-  parentId: z.string().uuid().optional().or(z.literal('')),
-  regionId: z.string().uuid().optional().or(z.literal('')),
+  inn: z
+    .string()
+    .refine(
+      (val) => !val || val.length === 10 || val.length === 12,
+      'ИНН должен содержать 10 или 12 цифр'
+    )
+    .optional(),
+  parentId: z.string().optional().or(z.literal('')),
+  regionId: z.string().optional().or(z.literal('')),
 });
 
 type FormData = z.infer<typeof schema>;

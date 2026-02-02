@@ -37,4 +37,43 @@ agents.md
 # server-api.md
 # server-errors.md
 
+
 backend/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Python eggs
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+virtualenv/
+
+# Database (SQLite)
+*.db
+*.db-shm
+*.db-wal
+app.db
+
+# Python testing & cache
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+
+# Python logs
+*.log
+
+# OS specific
+Thumbs.db
+.directory

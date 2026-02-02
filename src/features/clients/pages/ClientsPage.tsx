@@ -18,20 +18,11 @@ import {
   useUpdateClient,
   useDeleteClient,
 } from '../services/clientsApi';
-import type {
-  Client,
-  ClientsFilters as FiltersType,
-  CreateClientDto,
-  BackendErrorResponse,
-} from '../types';
+import { useFilters } from '../../../hooks/useFilters';
+import type { Client, CreateClientDto, BackendErrorResponse } from '../types';
 
 export function ClientsPage() {
-  const [filters, setFilters] = useState<FiltersType>({
-    limit: 10,
-    offset: 0,
-    sortBy: 'createdAt',
-    sortOrder: 'desc',
-  });
+  const { filters, updateFilters } = useFilters();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
@@ -161,14 +152,14 @@ export function ClientsPage() {
         </Alert>
       )}
 
-      <ClientsFilters filters={filters} onFiltersChange={setFilters} />
+      <ClientsFilters filters={filters} onFiltersChange={updateFilters} />
 
       <ClientsTable
         clients={data?.items || []}
         total={data?.total || 0}
         loading={isFetching}
         filters={filters}
-        onFiltersChange={setFilters}
+        onFiltersChange={updateFilters}
         onEdit={handleOpenEdit}
         onDelete={handleOpenDelete}
       />
