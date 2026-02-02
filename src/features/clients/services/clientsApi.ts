@@ -9,8 +9,8 @@ import type {
   Client,
   ClientsFilters,
   ClientsResponse,
-  CreateClientDto,
-  UpdateClientDto,
+  CreateClient,
+  UpdateClient,
   ClientSelectOption,
 } from '../types';
 
@@ -29,8 +29,9 @@ async function fetchClient(id: string): Promise<Client> {
 
 async function fetchClientSelectOptions(): Promise<ClientSelectOption[]> {
   // NOTE: Текущая реализация некорректна. Требуется новый эндпойнт на бэкенде для получения данных.
+  // А пока условно берем первые 20 клиентов из списка клиентов.
   const response = await apiClient.get<ClientsResponse>('/clients', {
-    params: { limit: 100 },
+    params: { limit: 20 },
   });
 
   return response.data.items.map((client) => ({
@@ -39,7 +40,7 @@ async function fetchClientSelectOptions(): Promise<ClientSelectOption[]> {
   }));
 }
 
-async function createClient(data: CreateClientDto): Promise<Client> {
+async function createClient(data: CreateClient): Promise<Client> {
   const response = await apiClient.post<Client>('/clients', data);
   return response.data;
 }
@@ -49,7 +50,7 @@ async function updateClient({
   data,
 }: {
   id: string;
-  data: UpdateClientDto;
+  data: UpdateClient;
 }): Promise<Client> {
   const response = await apiClient.patch<Client>(`/clients/${id}`, data);
   return response.data;
@@ -59,7 +60,7 @@ async function deleteClient(id: string): Promise<void> {
   await apiClient.delete(`/clients/${id}`);
 }
 
-// React Query хуки
+// React Query Hooks
 export function useClients(filters: ClientsFilters) {
   return useQuery({
     queryKey: ['clients', filters],
@@ -77,8 +78,12 @@ export function useClient(id: string | null) {
 }
 
 export function useClientSelectOptions() {
-  return useMutation({
-    mutationFn: fetchClientSelectOptions,
+  return useQuery({
+    queryKey: ['client-select-options'],
+    queryFn: fetchClientSelectOptions,
+    enabled: false,
+    gcTime: 0,
+    staleTime: 0,
   });
 }
 

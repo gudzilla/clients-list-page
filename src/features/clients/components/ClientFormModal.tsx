@@ -22,10 +22,9 @@ import { useClientSelectOptions, useClient } from '../services/clientsApi';
 import { useRegions } from '../services/regionsApi';
 import {
   type Client,
-  type CreateClientDto,
+  type CreateClient,
   type PartyType,
   type BackendErrorResponse,
-  type ClientSelectOption,
 } from '../types';
 
 const schema = z.object({
@@ -41,8 +40,8 @@ const schema = z.object({
       'ИНН должен содержать 10 или 12 цифр'
     )
     .optional(),
-  parentId: z.string().optional().or(z.literal('')),
-  regionId: z.string().optional().or(z.literal('')),
+  parentId: z.uuid().optional().or(z.literal('')),
+  regionId: z.uuid().optional().or(z.literal('')),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -50,7 +49,7 @@ type FormData = z.infer<typeof schema>;
 interface Props {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: CreateClientDto) => Promise<void>;
+  onSubmit: (data: CreateClient) => Promise<void>;
   client?: Client | null;
   loading?: boolean;
 }
@@ -62,7 +61,11 @@ export function ClientFormModal({
   client,
   loading,
 }: Props) {
-  const { mutate: fetchParentOptions } = useClientSelectOptions();
+  const {
+    refetch: fetchParentOptions,
+    data: clientOptions = [],
+    isFetching,
+  } = useClientSelectOptions();
   const { data: regions = [] } = useRegions();
   // Загружаем данные о родителе, если редактируем клиента с parentId
   const { data: initialParentClient } = useClient(client?.parentId || null);
@@ -70,17 +73,9 @@ export function ClientFormModal({
   const [genericError, setGenericError] = useState<string | null>(null);
   const [prevOpen, setPrevOpen] = useState(open);
 
-  // Локальный стейт для родительского селекта (MUI pattern)
-  const [parentSelectOpen, setParentSelectOpen] = useState(false);
-  const [parentOptions, setParentOptions] = useState<ClientSelectOption[]>([]);
-  const [parentLoading, setParentLoading] = useState(false);
-  const [selectedParentNode, setSelectedParentNode] =
-    useState<ClientSelectOption | null>(null);
-
   if (open !== prevOpen) {
     if (open) {
       setGenericError(null);
-      setSelectedParentNode(null);
     }
     setPrevOpen(open);
   }
@@ -203,22 +198,11 @@ export function ClientFormModal({
 
   // Фильтруем опции родителя (исключаем текущего клиента)
   const filteredClientOptions = client
-    ? parentOptions.filter((c) => c.clientId !== client.clientId)
-    : parentOptions;
+    ? clientOptions.filter((c) => c.clientId !== client.clientId)
+    : clientOptions;
 
   const handleOpenParentSelect = () => {
-    setParentSelectOpen(true);
-    setParentLoading(true);
-    fetchParentOptions(undefined, {
-      onSuccess: (data) => {
-        setParentOptions(data);
-        setParentLoading(false);
-      },
-    });
-  };
-
-  const handleCloseParentSelect = () => {
-    setParentSelectOpen(false);
+    fetchParentOptions();
   };
 
   return (
@@ -291,30 +275,27 @@ export function ClientFormModal({
               name="parentId"
               control={control}
               render={({ field }) => {
-                const resolvedParentValue =
-                  selectedParentNode ??
+                const selectedParent =
+                  clientOptions.find((c) => c.clientId === field.value) ||
                   (initialParentClient &&
                   initialParentClient.clientId === field.value
                     ? initialParentClient
-                    : null) ??
+                    : null) ||
                   null;
 
                 return (
                   <Autocomplete
-                    open={parentSelectOpen}
-                    options={parentLoading ? [] : filteredClientOptions}
+                    options={isFetching ? [] : filteredClientOptions}
                     getOptionLabel={(option) => option.name}
                     isOptionEqualToValue={(option, value) =>
                       option.clientId === value.clientId
                     }
-                    value={resolvedParentValue}
+                    value={selectedParent}
                     onChange={(_, value) => {
-                      setSelectedParentNode(value);
                       field.onChange(value?.clientId || '');
                     }}
                     onOpen={handleOpenParentSelect}
-                    onClose={handleCloseParentSelect}
-                    loading={parentLoading}
+                    loading={isFetching}
                     renderInput={(params) => (
                       <TextField {...params} label="Родительский клиент" />
                     )}

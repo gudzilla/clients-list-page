@@ -13,14 +13,10 @@ import {
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
-import { useClientSelectOptions, useClient } from '../services/clientsApi';
+import { useClientSelectOptions } from '../services/clientsApi';
 import { useRegions } from '../services/regionsApi';
 import { useDebounce } from '../../../hooks/useDebounce';
-import {
-  type ClientsFilters as FiltersType,
-  type PartyType,
-  type ClientSelectOption,
-} from '../types';
+import { type ClientsFilters as FiltersType, type PartyType } from '../types';
 
 interface Props {
   filters: FiltersType;
@@ -35,21 +31,16 @@ const PARTY_TYPE_OPTIONS = [
 ];
 
 export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
-  const { mutate: fetchParentOptions } = useClientSelectOptions();
+  const {
+    refetch: fetchParentOptions,
+    data: clientOptions = [],
+    isFetching,
+  } = useClientSelectOptions();
   const { data: regions = [] } = useRegions();
-  const { data: initialParentClient } = useClient(filters.parentId || null);
 
   // Локальный стейт для мновенного отображения ввода
   const [localQuery, setLocalQuery] = useState(filters.query || '');
 
-  // Локальный стейт для родительского селекта (MUI pattern)
-  const [parentSelectOpen, setParentSelectOpen] = useState(false);
-  const [parentOptions, setParentOptions] = useState<ClientSelectOption[]>([]);
-  const [parentLoading, setParentLoading] = useState(false);
-  const [selectedParentNode, setSelectedParentNode] =
-    useState<ClientSelectOption | null>(null);
-
-  // Дебаунс значения (300мс)
   const debouncedQuery = useDebounce(localQuery, 500);
 
   // Синхронизация локального стейта при изменении фильтров извне (например, сброс)
@@ -59,13 +50,6 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.query]);
-
-  // Сброс выбранного родителя при очистке фильтра
-  useEffect(() => {
-    if (!filters.parentId) {
-      setSelectedParentNode(null);
-    }
-  }, [filters.parentId]);
 
   // Эффект для обновления родительских фильтров при изменении дебаунс-значения
   useEffect(() => {
@@ -88,29 +72,13 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
   };
 
   const handleOpenParentSelect = () => {
-    setParentSelectOpen(true);
-    setParentLoading(true);
-    fetchParentOptions(undefined, {
-      onSuccess: (data) => {
-        setParentOptions(data);
-        setParentLoading(false);
-      },
-    });
-  };
-
-  const handleCloseParentSelect = () => {
-    setParentSelectOpen(false);
+    fetchParentOptions();
   };
 
   const selectedRegion = regions.find((r) => r.id === filters.regionId) || null;
 
-  // Определяем отображаемое значение для Autocomplete
-  const resolvedParentValue =
-    selectedParentNode ??
-    (initialParentClient && initialParentClient.clientId === filters.parentId
-      ? initialParentClient
-      : null) ??
-    null;
+  const selectedParent =
+    clientOptions.find((c) => c.clientId === filters.parentId) || null;
 
   return (
     <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 3 }}>
@@ -145,23 +113,20 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
 
       <Autocomplete
         size="small"
-        open={parentSelectOpen}
-        options={parentOptions}
+        options={isFetching ? [] : clientOptions}
         getOptionLabel={(option) => option.name}
         isOptionEqualToValue={(option, value) =>
           option.clientId === value.clientId
         }
-        value={resolvedParentValue}
+        value={selectedParent}
         onChange={(_, value) => {
-          setSelectedParentNode(value);
           onFiltersChange({
             ...filters,
             parentId: value?.clientId,
           });
         }}
         onOpen={handleOpenParentSelect}
-        onClose={handleCloseParentSelect}
-        loading={parentLoading}
+        loading={isFetching}
         renderInput={(params) => (
           <TextField {...params} label="Родительский клиент" />
         )}
