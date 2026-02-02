@@ -20,17 +20,18 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useClientSelectOptions } from '../services/clientsApi';
 import { useRegions } from '../services/regionsApi';
-import type {
-  Client,
-  CreateClientDto,
-  PartyType,
-  BackendErrorResponse,
+import {
+  type Client,
+  type CreateClientDto,
+  type PartyType,
+  type BackendErrorResponse,
+  PARTY_TYPES,
 } from '../types';
 
 const schema = z.object({
   name: z.string().min(1, 'Введите название').max(255),
   fullName: z.string().max(255).optional(),
-  partyType: z.enum(['individual', 'legal'], {
+  partyType: z.enum([PARTY_TYPES.INDIVIDUAL, PARTY_TYPES.LEGAL], {
     message: 'Выберите тип стороны',
   }),
   inn: z
@@ -88,7 +89,7 @@ export function ClientFormModal({
     defaultValues: {
       name: '',
       fullName: '',
-      partyType: 'individual' as PartyType,
+      partyType: PARTY_TYPES.INDIVIDUAL as PartyType,
       inn: '',
       parentId: '',
       regionId: '',
@@ -110,7 +111,7 @@ export function ClientFormModal({
         reset({
           name: '',
           fullName: '',
-          partyType: 'legal',
+          partyType: PARTY_TYPES.LEGAL,
           inn: '',
           parentId: '',
           regionId: '',
@@ -220,8 +221,12 @@ export function ClientFormModal({
                 <FormControl fullWidth error={!!errors.partyType}>
                   <InputLabel>Тип стороны *</InputLabel>
                   <Select {...field} label="Тип стороны *">
-                    <MenuItem value="legal">Юридическое лицо</MenuItem>
-                    <MenuItem value="individual">Физическое лицо</MenuItem>
+                    <MenuItem value={PARTY_TYPES.LEGAL}>
+                      Юридическое лицо
+                    </MenuItem>
+                    <MenuItem value={PARTY_TYPES.INDIVIDUAL}>
+                      Физическое лицо
+                    </MenuItem>
                   </Select>
                   {errors.partyType && (
                     <FormHelperText>{errors.partyType.message}</FormHelperText>

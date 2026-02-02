@@ -1,4 +1,9 @@
-export type PartyType = 'individual' | 'legal';
+export const PARTY_TYPES = {
+  INDIVIDUAL: 'individual',
+  LEGAL: 'legal',
+} as const;
+
+export type PartyType = (typeof PARTY_TYPES)[keyof typeof PARTY_TYPES];
 
 export interface Client {
   clientId: string;
