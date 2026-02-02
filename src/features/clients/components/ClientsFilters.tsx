@@ -20,6 +20,7 @@ import type { ClientsFilters as FiltersType, PartyType } from '../types';
 interface Props {
   filters: FiltersType;
   onFiltersChange: (filters: FiltersType) => void;
+  onReset: () => void;
 }
 
 const PARTY_TYPE_OPTIONS = [
@@ -28,7 +29,7 @@ const PARTY_TYPE_OPTIONS = [
   { value: 'legal', label: 'Юридическое лицо' },
 ];
 
-export function ClientsFilters({ filters, onFiltersChange }: Props) {
+export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
   const { data: clientOptions = [], refetch: refetchClients } =
     useClientSelectOptions();
   const { data: regions = [] } = useRegions();
@@ -64,13 +65,7 @@ export function ClientsFilters({ filters, onFiltersChange }: Props) {
   };
 
   const handleReset = () => {
-    setLocalQuery(''); // Сбрасываем локально сразу
-    onFiltersChange({
-      limit: filters.limit,
-      offset: 0,
-      sortBy: filters.sortBy,
-      sortOrder: filters.sortOrder,
-    });
+    onReset();
   };
 
   const selectedParent =

@@ -22,7 +22,7 @@ import { useFilters } from '../../../hooks/useFilters';
 import type { Client, CreateClientDto, BackendErrorResponse } from '../types';
 
 export function ClientsPage() {
-  const { filters, updateFilters } = useFilters();
+  const { filters, updateFilters, resetFilters } = useFilters();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
@@ -152,7 +152,11 @@ export function ClientsPage() {
         </Alert>
       )}
 
-      <ClientsFilters filters={filters} onFiltersChange={updateFilters} />
+      <ClientsFilters
+        filters={filters}
+        onFiltersChange={updateFilters}
+        onReset={resetFilters}
+      />
 
       <ClientsTable
         clients={data?.items || []}
