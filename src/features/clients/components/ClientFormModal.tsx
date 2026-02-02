@@ -25,13 +25,13 @@ import {
   type CreateClientDto,
   type PartyType,
   type BackendErrorResponse,
-  PARTY_TYPES,
+  type ClientSelectOption,
 } from '../types';
 
 const schema = z.object({
   name: z.string().min(1, 'Введите название').max(255),
   fullName: z.string().max(255).optional(),
-  partyType: z.enum([PARTY_TYPES.INDIVIDUAL, PARTY_TYPES.LEGAL], {
+  partyType: z.enum(['individual', 'legal'], {
     message: 'Выберите тип стороны',
   }),
   inn: z
@@ -62,14 +62,15 @@ export function ClientFormModal({
   client,
   loading,
 }: Props) {
-  const {
-    mutate: fetchParentOptions,
-    data: clientOptions = [],
-    isPending,
-  } = useClientSelectOptions();
+  const { mutate: fetchParentOptions } = useClientSelectOptions();
   const { data: regions = [] } = useRegions();
   const [genericError, setGenericError] = useState<string | null>(null);
   const [prevOpen, setPrevOpen] = useState(open);
+
+  // Локальный стейт для родительского селекта (MUI pattern)
+  const [parentSelectOpen, setParentSelectOpen] = useState(false);
+  const [parentOptions, setParentOptions] = useState<ClientSelectOption[]>([]);
+  const [parentLoading, setParentLoading] = useState(false);
 
   if (open !== prevOpen) {
     if (open) {
@@ -89,7 +90,7 @@ export function ClientFormModal({
     defaultValues: {
       name: '',
       fullName: '',
-      partyType: PARTY_TYPES.INDIVIDUAL as PartyType,
+      partyType: 'individual' as PartyType,
       inn: '',
       parentId: '',
       regionId: '',
@@ -111,7 +112,7 @@ export function ClientFormModal({
         reset({
           name: '',
           fullName: '',
-          partyType: PARTY_TYPES.LEGAL,
+          partyType: 'legal',
           inn: '',
           parentId: '',
           regionId: '',
@@ -172,11 +173,23 @@ export function ClientFormModal({
 
   // Фильтруем опции родителя (исключаем текущего клиента)
   const filteredClientOptions = client
-    ? clientOptions.filter((c) => c.clientId !== client.clientId)
-    : clientOptions;
+    ? parentOptions.filter((c) => c.clientId !== client.clientId)
+    : parentOptions;
 
   const handleOpenParentSelect = () => {
-    fetchParentOptions();
+    setParentSelectOpen(true);
+    setParentLoading(true);
+    fetchParentOptions(undefined, {
+      onSuccess: (data) => {
+        setParentOptions(data);
+        setParentLoading(false);
+      },
+    });
+  };
+
+  const handleCloseParentSelect = () => {
+    setParentSelectOpen(false);
+    setParentOptions([]);
   };
 
   return (
@@ -221,12 +234,8 @@ export function ClientFormModal({
                 <FormControl fullWidth error={!!errors.partyType}>
                   <InputLabel>Тип стороны *</InputLabel>
                   <Select {...field} label="Тип стороны *">
-                    <MenuItem value={PARTY_TYPES.LEGAL}>
-                      Юридическое лицо
-                    </MenuItem>
-                    <MenuItem value={PARTY_TYPES.INDIVIDUAL}>
-                      Физическое лицо
-                    </MenuItem>
+                    <MenuItem value="legal">Юридическое лицо</MenuItem>
+                    <MenuItem value="individual">Физическое лицо</MenuItem>
                   </Select>
                   {errors.partyType && (
                     <FormHelperText>{errors.partyType.message}</FormHelperText>
@@ -254,7 +263,8 @@ export function ClientFormModal({
               control={control}
               render={({ field }) => (
                 <Autocomplete
-                  options={isPending ? [] : filteredClientOptions}
+                  open={parentSelectOpen}
+                  options={parentLoading ? [] : filteredClientOptions}
                   getOptionLabel={(option) => option.name}
                   value={
                     filteredClientOptions.find(
@@ -263,7 +273,8 @@ export function ClientFormModal({
                   }
                   onChange={(_, value) => field.onChange(value?.clientId || '')}
                   onOpen={handleOpenParentSelect}
-                  disabled={isPending}
+                  onClose={handleCloseParentSelect}
+                  loading={parentLoading}
                   renderInput={(params) => (
                     <TextField {...params} label="Родительский клиент" />
                   )}

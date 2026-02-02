@@ -18,7 +18,7 @@ import { useDebounce } from '../../../hooks/useDebounce';
 import {
   type ClientsFilters as FiltersType,
   type PartyType,
-  PARTY_TYPES,
+  type ClientSelectOption,
 } from '../types';
 
 interface Props {
@@ -29,20 +29,21 @@ interface Props {
 
 const PARTY_TYPE_OPTIONS = [
   { value: '', label: 'Все' },
-  { value: PARTY_TYPES.INDIVIDUAL, label: 'Физическое лицо' },
-  { value: PARTY_TYPES.LEGAL, label: 'Юридическое лицо' },
+  { value: 'individual', label: 'Физическое лицо' },
+  { value: 'legal', label: 'Юридическое лицо' },
 ];
 
 export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
-  const {
-    mutate: fetchParentOptions,
-    data: clientOptions = [],
-    isPending,
-  } = useClientSelectOptions();
+  const { mutate: fetchParentOptions } = useClientSelectOptions();
   const { data: regions = [] } = useRegions();
 
   // Локальный стейт для мновенного отображения ввода
   const [localQuery, setLocalQuery] = useState(filters.query || '');
+
+  // Локальный стейт для родительского селекта (MUI pattern)
+  const [parentSelectOpen, setParentSelectOpen] = useState(false);
+  const [parentOptions, setParentOptions] = useState<ClientSelectOption[]>([]);
+  const [parentLoading, setParentLoading] = useState(false);
 
   // Дебаунс значения (300мс)
   const debouncedQuery = useDebounce(localQuery, 500);
@@ -76,11 +77,23 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
   };
 
   const handleOpenParentSelect = () => {
-    fetchParentOptions();
+    setParentSelectOpen(true);
+    setParentLoading(true);
+    fetchParentOptions(undefined, {
+      onSuccess: (data) => {
+        setParentOptions(data);
+        setParentLoading(false);
+      },
+    });
+  };
+
+  const handleCloseParentSelect = () => {
+    setParentSelectOpen(false);
+    setParentOptions([]);
   };
 
   const selectedParent =
-    clientOptions.find((c) => c.clientId === filters.parentId) || null;
+    parentOptions.find((c) => c.clientId === filters.parentId) || null;
   const selectedRegion = regions.find((r) => r.id === filters.regionId) || null;
 
   return (
@@ -105,7 +118,8 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
 
       <Autocomplete
         size="small"
-        options={isPending ? [] : clientOptions}
+        open={parentSelectOpen}
+        options={parentOptions}
         getOptionLabel={(option) => option.name}
         value={selectedParent}
         onChange={(_, value) => {
@@ -116,6 +130,8 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
           });
         }}
         onOpen={handleOpenParentSelect}
+        onClose={handleCloseParentSelect}
+        loading={parentLoading}
         renderInput={(params) => (
           <TextField {...params} label="Родительский клиент" />
         )}
