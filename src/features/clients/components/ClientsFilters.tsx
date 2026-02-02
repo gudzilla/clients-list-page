@@ -60,7 +60,7 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
   useEffect(() => {
     // Обновляем только если значение отличается от текущего в фильтрах
     if (debouncedQuery !== (filters.query || '')) {
-      onFiltersChange({ ...filters, query: debouncedQuery, offset: 0 });
+      onFiltersChange({ ...filters, query: debouncedQuery });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedQuery]);
@@ -68,7 +68,7 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       // Мгновенный поиск по Enter (игнорируя дебаунс)
-      onFiltersChange({ ...filters, query: localQuery, offset: 0 });
+      onFiltersChange({ ...filters, query: localQuery });
     }
   };
 
@@ -126,7 +126,6 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
           onFiltersChange({
             ...filters,
             parentId: value?.clientId,
-            offset: 0,
           });
         }}
         onOpen={handleOpenParentSelect}
@@ -147,7 +146,6 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
           onFiltersChange({
             ...filters,
             regionId: value?.id,
-            offset: 0,
           });
         }}
         renderInput={(params) => <TextField {...params} label="Регион" />}
@@ -163,7 +161,6 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
             onFiltersChange({
               ...filters,
               partyType: (e.target.value as PartyType) || undefined,
-              offset: 0,
             });
           }}
         >

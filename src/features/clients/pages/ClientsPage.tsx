@@ -18,11 +18,11 @@ import {
   useUpdateClient,
   useDeleteClient,
 } from '../services/clientsApi';
-import { useFilters } from '../../../hooks/useFilters';
+import { useClientsFilters } from '../hooks/useClientsFilters';
 import type { Client, CreateClientDto, BackendErrorResponse } from '../types';
 
 export function ClientsPage() {
-  const { filters, updateFilters, resetFilters } = useFilters();
+  const { filters, updateFilters, resetFilters } = useClientsFilters();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
