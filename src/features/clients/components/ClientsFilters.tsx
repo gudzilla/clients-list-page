@@ -9,10 +9,11 @@ import {
   Select,
   MenuItem,
   InputAdornment,
+  IconButton,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
-import { useClientSelectOptions } from '../services/clientsApi';
+import { useClientSelectOptions, useClient } from '../services/clientsApi';
 import { useRegions } from '../services/regionsApi';
 import { useDebounce } from '../../../hooks/useDebounce';
 import {
@@ -36,6 +37,7 @@ const PARTY_TYPE_OPTIONS = [
 export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
   const { mutate: fetchParentOptions } = useClientSelectOptions();
   const { data: regions = [] } = useRegions();
+  const { data: initialParentClient } = useClient(filters.parentId || null);
 
   // Локальный стейт для мновенного отображения ввода
   const [localQuery, setLocalQuery] = useState(filters.query || '');
@@ -102,6 +104,14 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
 
   const selectedRegion = regions.find((r) => r.id === filters.regionId) || null;
 
+  // Определяем отображаемое значение для Autocomplete
+  const resolvedParentValue =
+    selectedParentNode ??
+    (initialParentClient && initialParentClient.clientId === filters.parentId
+      ? initialParentClient
+      : null) ??
+    null;
+
   return (
     <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 3 }}>
       <TextField
@@ -117,9 +127,20 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
                 <SearchIcon color="action" />
               </InputAdornment>
             ),
+            endAdornment: localQuery && (
+              <InputAdornment position="end">
+                <IconButton
+                  size="small"
+                  edge="end"
+                  onClick={() => setLocalQuery('')}
+                >
+                  <ClearIcon fontSize="small" />
+                </IconButton>
+              </InputAdornment>
+            ),
           },
         }}
-        sx={{ minWidth: 250 }}
+        sx={{ flex: '0 0 250px' }}
       />
 
       <Autocomplete
@@ -130,7 +151,7 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
         isOptionEqualToValue={(option, value) =>
           option.clientId === value.clientId
         }
-        value={selectedParentNode}
+        value={resolvedParentValue}
         onChange={(_, value) => {
           setSelectedParentNode(value);
           onFiltersChange({

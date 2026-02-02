@@ -18,7 +18,7 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useClientSelectOptions } from '../services/clientsApi';
+import { useClientSelectOptions, useClient } from '../services/clientsApi';
 import { useRegions } from '../services/regionsApi';
 import {
   type Client,
@@ -64,6 +64,9 @@ export function ClientFormModal({
 }: Props) {
   const { mutate: fetchParentOptions } = useClientSelectOptions();
   const { data: regions = [] } = useRegions();
+  // Загружаем данные о родителе, если редактируем клиента с parentId
+  const { data: initialParentClient } = useClient(client?.parentId || null);
+
   const [genericError, setGenericError] = useState<string | null>(null);
   const [prevOpen, setPrevOpen] = useState(open);
 
@@ -99,6 +102,30 @@ export function ClientFormModal({
       regionId: '',
     },
   });
+
+  useEffect(() => {
+    if (open) {
+      if (client) {
+        reset({
+          name: client.name,
+          fullName: client.fullName || '',
+          partyType: client.partyType,
+          inn: client.inn || '',
+          parentId: client.parentId || '',
+          regionId: client.regionId || '',
+        });
+      } else {
+        reset({
+          name: '',
+          fullName: '',
+          partyType: 'legal',
+          inn: '',
+          parentId: '',
+          regionId: '',
+        });
+      }
+    }
+  }, [open, client, reset]);
 
   useEffect(() => {
     if (open) {
@@ -263,27 +290,37 @@ export function ClientFormModal({
             <Controller
               name="parentId"
               control={control}
-              render={({ field }) => (
-                <Autocomplete
-                  open={parentSelectOpen}
-                  options={parentLoading ? [] : filteredClientOptions}
-                  getOptionLabel={(option) => option.name}
-                  isOptionEqualToValue={(option, value) =>
-                    option.clientId === value.clientId
-                  }
-                  value={selectedParentNode}
-                  onChange={(_, value) => {
-                    setSelectedParentNode(value);
-                    field.onChange(value?.clientId || '');
-                  }}
-                  onOpen={handleOpenParentSelect}
-                  onClose={handleCloseParentSelect}
-                  loading={parentLoading}
-                  renderInput={(params) => (
-                    <TextField {...params} label="Родительский клиент" />
-                  )}
-                />
-              )}
+              render={({ field }) => {
+                const resolvedParentValue =
+                  selectedParentNode ??
+                  (initialParentClient &&
+                  initialParentClient.clientId === field.value
+                    ? initialParentClient
+                    : null) ??
+                  null;
+
+                return (
+                  <Autocomplete
+                    open={parentSelectOpen}
+                    options={parentLoading ? [] : filteredClientOptions}
+                    getOptionLabel={(option) => option.name}
+                    isOptionEqualToValue={(option, value) =>
+                      option.clientId === value.clientId
+                    }
+                    value={resolvedParentValue}
+                    onChange={(_, value) => {
+                      setSelectedParentNode(value);
+                      field.onChange(value?.clientId || '');
+                    }}
+                    onOpen={handleOpenParentSelect}
+                    onClose={handleCloseParentSelect}
+                    loading={parentLoading}
+                    renderInput={(params) => (
+                      <TextField {...params} label="Родительский клиент" />
+                    )}
+                  />
+                );
+              }}
             />
 
             <Controller
