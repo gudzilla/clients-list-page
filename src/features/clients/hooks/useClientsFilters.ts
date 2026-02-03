@@ -56,99 +56,103 @@ export function useClientsFilters() {
   // 2. Обновление фильтров (ClientsFilters -> URL)
   const updateFilters = useCallback(
     (updates: Partial<ClientsFilters>) => {
-      setSearchParams((prevParams: URLSearchParams) => {
-        // Получаем текущее состояние фильтров из URL, чтобы корректно применить updates
-        // Мы не можем полагаться на `filters` из замыкания, так как useCallback не должен зависеть от часто меняющегося filters.
-        // Поэтому воссоздадим логику парсинга (упрощенно) или, что лучше, будем работать с URLSearchParams напрямую.
+      setSearchParams(
+        (prevParams: URLSearchParams) => {
+          // Получаем текущее состояние фильтров из URL, чтобы корректно применить updates
+          // Мы не можем полагаться на `filters` из замыкания, так как useCallback не должен зависеть от часто меняющегося filters.
+          // Поэтому воссоздадим логику парсинга (упрощенно) или, что лучше, будем работать с URLSearchParams напрямую.
 
-        const currentParams = new URLSearchParams(prevParams);
+          const currentParams = new URLSearchParams(prevParams);
 
-        // Вспомогательная функция для получения текущего значения (число или строка)
-        const getCurrentValue = (key: string): string | null =>
-          currentParams.get(key);
+          // Вспомогательная функция для получения текущего значения (число или строка)
+          const getCurrentValue = (key: string): string | null =>
+            currentParams.get(key);
 
-        // Применяем обновления к "виртуальному" объекту значений
-        // Для этого нам нужно знать, какие ключи мы вообще поддерживаем
-        const keys: (keyof ClientsFilters)[] = [
-          'limit',
-          'offset',
-          'sortBy',
-          'sortOrder',
-          'query',
-          'parentId',
-          'regionId',
-          'partyType',
-        ];
+          // Применяем обновления к "виртуальному" объекту значений
+          // Для этого нам нужно знать, какие ключи мы вообще поддерживаем
+          const keys: (keyof ClientsFilters)[] = [
+            'limit',
+            'offset',
+            'sortBy',
+            'sortOrder',
+            'query',
+            'parentId',
+            'regionId',
+            'partyType',
+          ];
 
-        // Определяем новое значение для каждого ключа
-        const nextValues: Record<string, string | number | undefined | null> =
-          {};
+          // Определяем новое значение для каждого ключа
+          const nextValues: Record<string, string | number | undefined | null> =
+            {};
 
-        keys.forEach((key) => {
-          if (key in updates) {
-            nextValues[key] = updates[key];
-          } else {
-            // Если в updates нет, берем из URL или (важно!) оставляем как есть в URL
-            // Но для логики сброса offset нам нужно знать значение.
-            // Просто берем из URL.
-            const valFromUrl = getCurrentValue(key);
-            if (valFromUrl !== null) {
-              nextValues[key] = valFromUrl;
-              // Note: числа останутся строками, но для сравнения с DEFAULT_FILTERS ниже мы это учтем
+          keys.forEach((key) => {
+            if (key in updates) {
+              nextValues[key] = updates[key];
             } else {
-              nextValues[key] = undefined; // Значит сейчас действует дефолт
+              // Если в updates нет, берем из URL или (важно!) оставляем как есть в URL
+              // Но для логики сброса offset нам нужно знать значение.
+              // Просто берем из URL.
+              const valFromUrl = getCurrentValue(key);
+              if (valFromUrl !== null) {
+                nextValues[key] = valFromUrl;
+                // Note: числа останутся строками, но для сравнения с DEFAULT_FILTERS ниже мы это учтем
+              } else {
+                nextValues[key] = undefined; // Значит сейчас действует дефолт
+              }
             }
+          });
+
+          // Логика сброса offset
+          const filterKeys: (keyof ClientsFilters)[] = [
+            'query',
+            'parentId',
+            'regionId',
+            'partyType',
+            'limit',
+          ];
+          const hasFilterChanges = filterKeys.some((key) => key in updates);
+
+          if (hasFilterChanges && !('offset' in updates)) {
+            nextValues['offset'] = 0;
           }
-        });
 
-        // Логика сброса offset
-        const filterKeys: (keyof ClientsFilters)[] = [
-          'query',
-          'parentId',
-          'regionId',
-          'partyType',
-        ];
-        const hasFilterChanges = filterKeys.some((key) => key in updates);
+          // Теперь формируем итоговый URLSearchParams
+          const newParams = new URLSearchParams();
 
-        if (hasFilterChanges && !('offset' in updates)) {
-          nextValues['offset'] = 0;
-        }
+          keys.forEach((key) => {
+            let val = nextValues[key];
 
-        // Теперь формируем итоговый URLSearchParams
-        const newParams = new URLSearchParams();
+            // Если значения нет в nextValues, значит оно не задано ни в URL, ни в updates -> действует дефолт
+            // Но мы должны проверить, не нужно ли нам записать его явно?
+            // Нет, мы пишем только то, что отличается от дефолта.
 
-        keys.forEach((key) => {
-          let val = nextValues[key];
+            // Получаем дефолтное значение для сравнения
+            const defaultVal = DEFAULT_FILTERS[key];
 
-          // Если значения нет в nextValues, значит оно не задано ни в URL, ни в updates -> действует дефолт
-          // Но мы должны проверить, не нужно ли нам записать его явно?
-          // Нет, мы пишем только то, что отличается от дефолта.
+            // Нормализация значения для сравнения (приводим к строке или числу как в дефолте)
+            if (val !== undefined && val !== null && val !== '') {
+              // Если val пришел из URL (строка), а дефолт число -> приводим val к числу
+              if (typeof defaultVal === 'number' && typeof val === 'string') {
+                val = parseInt(val, 10);
+              }
 
-          // Получаем дефолтное значение для сравнения
-          const defaultVal = DEFAULT_FILTERS[key];
-
-          // Нормализация значения для сравнения (приводим к строке или числу как в дефолте)
-          if (val !== undefined && val !== null && val !== '') {
-            // Если val пришел из URL (строка), а дефолт число -> приводим val к числу
-            if (typeof defaultVal === 'number' && typeof val === 'string') {
-              val = parseInt(val, 10);
+              // Сравнение
+              if (val !== defaultVal) {
+                newParams.set(key, String(val));
+              }
             }
+          });
 
-            // Сравнение
-            if (val !== defaultVal) {
-              newParams.set(key, String(val));
-            }
-          }
-        });
-
-        return newParams;
-      });
+          return newParams;
+        },
+        { replace: true }
+      );
     },
     [setSearchParams]
   );
 
   const resetFilters = useCallback(() => {
-    setSearchParams({});
+    setSearchParams({}, { replace: true });
   }, [setSearchParams]);
 
   return { filters, updateFilters, resetFilters };
