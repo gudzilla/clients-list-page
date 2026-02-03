@@ -23,14 +23,14 @@ import { useRegions } from '../services/regionsApi';
 import {
   type Client,
   type CreateClient,
-  type PartyType,
   type BackendErrorResponse,
+  PARTY_TYPES,
 } from '../types';
 
 const schema = z.object({
   name: z.string().min(1, 'Введите название').max(255),
   fullName: z.string().max(255).optional(),
-  partyType: z.enum(['individual', 'legal'], {
+  partyType: z.enum([PARTY_TYPES.INDIVIDUAL, PARTY_TYPES.LEGAL], {
     message: 'Выберите тип стороны',
   }),
   inn: z
@@ -91,7 +91,7 @@ export function ClientFormModal({
     defaultValues: {
       name: '',
       fullName: '',
-      partyType: 'individual' as PartyType,
+      partyType: PARTY_TYPES.INDIVIDUAL,
       inn: '',
       parentId: '',
       regionId: '',
@@ -113,31 +113,7 @@ export function ClientFormModal({
         reset({
           name: '',
           fullName: '',
-          partyType: 'legal',
-          inn: '',
-          parentId: '',
-          regionId: '',
-        });
-      }
-    }
-  }, [open, client, reset]);
-
-  useEffect(() => {
-    if (open) {
-      if (client) {
-        reset({
-          name: client.name,
-          fullName: client.fullName || '',
-          partyType: client.partyType,
-          inn: client.inn || '',
-          parentId: client.parentId || '',
-          regionId: client.regionId || '',
-        });
-      } else {
-        reset({
-          name: '',
-          fullName: '',
-          partyType: 'legal',
+          partyType: PARTY_TYPES.INDIVIDUAL,
           inn: '',
           parentId: '',
           regionId: '',
@@ -247,8 +223,12 @@ export function ClientFormModal({
                 <FormControl fullWidth error={!!errors.partyType}>
                   <InputLabel>Тип стороны *</InputLabel>
                   <Select {...field} label="Тип стороны *">
-                    <MenuItem value="legal">Юридическое лицо</MenuItem>
-                    <MenuItem value="individual">Физическое лицо</MenuItem>
+                    <MenuItem value={PARTY_TYPES.LEGAL}>
+                      Юридическое лицо
+                    </MenuItem>
+                    <MenuItem value={PARTY_TYPES.INDIVIDUAL}>
+                      Физическое лицо
+                    </MenuItem>
                   </Select>
                   {errors.partyType && (
                     <FormHelperText>{errors.partyType.message}</FormHelperText>
