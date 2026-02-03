@@ -11,12 +11,9 @@ export const apiClient = axios.create({
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError<BackendErrorResponse>) => {
-    // Если есть ответ от сервера и он соответствует нашему формату ошибок
     if (error.response?.data && error.response.data.errorName) {
-      // Прокидываем данные ошибки дальше, чтобы их было удобно читать в catch
       return Promise.reject(error.response.data);
     }
-    // Иначе прокидываем исходную ошибку (сеть, 500 без тела и т.д.)
     return Promise.reject(error);
   }
 );

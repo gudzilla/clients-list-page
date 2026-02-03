@@ -19,7 +19,7 @@ import {
   useDeleteClient,
 } from '../services/clientsApi';
 import { useClientsFilters } from '../hooks/useClientsFilters';
-import type { Client, CreateClientDto, BackendErrorResponse } from '../types';
+import type { Client, CreateClient, BackendErrorResponse } from '../types';
 
 export function ClientsPage() {
   const { filters, updateFilters, resetFilters } = useClientsFilters();
@@ -68,7 +68,7 @@ export function ClientsPage() {
     setDeletingClient(null);
   };
 
-  const handleSubmit = async (formData: CreateClientDto) => {
+  const handleSubmit = async (formData: CreateClient) => {
     if (editingClient) {
       await updateMutation.mutateAsync({
         id: editingClient.clientId,

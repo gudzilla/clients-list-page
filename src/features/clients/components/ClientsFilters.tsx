@@ -51,9 +51,7 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.query]);
 
-  // Эффект для обновления родительских фильтров при изменении дебаунс-значения
   useEffect(() => {
-    // Обновляем только если значение отличается от текущего в фильтрах
     if (debouncedQuery !== (filters.query || '')) {
       onFiltersChange({ ...filters, query: debouncedQuery });
     }
@@ -62,7 +60,6 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      // Мгновенный поиск по Enter (игнорируя дебаунс)
       onFiltersChange({ ...filters, query: localQuery });
     }
   };

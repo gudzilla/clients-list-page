@@ -11,6 +11,6 @@ export function useRegions() {
   return useQuery({
     queryKey: ['regions'],
     queryFn: fetchRegions,
-    staleTime: Infinity, // кешируем навсегда
+    staleTime: Infinity,
   });
 }
