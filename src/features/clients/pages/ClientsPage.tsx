@@ -103,7 +103,6 @@ export function ClientsPage() {
       handleCloseDelete();
     } catch (err: unknown) {
       const backendError = err as BackendErrorResponse;
-      // Если клиент уже удален (404), считаем это успехом с точки зрения UI
       if (
         backendError &&
         typeof backendError === 'object' &&

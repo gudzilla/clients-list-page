@@ -30,19 +30,15 @@ yarn-error.log*
 *.njsproj
 *.sln
 *.sw?
+.vite/
+
 
 # Project specific
-# gemini.md
-# agents.md
-# server-api.md
-# server-errors.md
-
 *.md
 !README.md
 
 
 # BACKEND
-
 backend/
 
 # Python

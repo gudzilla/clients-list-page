@@ -42,12 +42,10 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
   } = useParentClientOptions();
   const { data: regions = [] } = useRegions();
 
-  // Локальный стейт для мновенного отображения ввода
   const [localQuery, setLocalQuery] = useState(filters.query || '');
 
   const debouncedQuery = useDebounce(localQuery, 500);
 
-  // Синхронизация локального стейта при изменении фильтров извне (например, сброс)
   useEffect(() => {
     if (filters.query !== localQuery) {
       setLocalQuery(filters.query || '');

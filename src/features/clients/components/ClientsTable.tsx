@@ -65,7 +65,7 @@ export function ClientsTable({
     onFiltersChange({
       ...filters,
       limit: newLimit,
-      offset: 0, // Сбрасываем на первую страницу при смене лимита
+      offset: 0,
     });
   };
 

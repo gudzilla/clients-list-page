@@ -27,8 +27,6 @@ async function fetchClient(id: string): Promise<Client> {
 }
 
 async function fetchParentClientOptions(): Promise<ParentClientOption[]> {
-  // NOTE: Текущая реализация некорректна. Требуется новый эндпойнт на бэкенде для получения данных.
-  // А пока условно берем первые 20 клиентов из списка клиентов.
   const response = await apiClient.get<ClientsResponse>('/clients', {
     params: { limit: 20 },
   });
@@ -59,7 +57,6 @@ async function deleteClient(id: string): Promise<void> {
   await apiClient.delete(`/clients/${id}`);
 }
 
-// React Query Hooks
 export function useClients(filters: ClientsFilters) {
   return useQuery({
     queryKey: ['clients', filters],

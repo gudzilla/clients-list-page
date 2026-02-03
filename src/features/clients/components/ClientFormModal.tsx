@@ -67,7 +67,6 @@ export function ClientFormModal({
     isFetching,
   } = useParentClientOptions();
   const { data: regions = [] } = useRegions();
-  // Загружаем данные о родителе, если редактируем клиента с parentId
   const { data: initialParentClient } = useClient(client?.parentId || null);
 
   const [genericError, setGenericError] = useState<string | null>(null);
@@ -172,7 +171,6 @@ export function ClientFormModal({
     }
   };
 
-  // Фильтруем опции родителя (исключаем текущего клиента)
   const filteredClientOptions = client
     ? clientOptions.filter((c) => c.clientId !== client.clientId)
     : clientOptions;
