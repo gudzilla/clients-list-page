@@ -13,11 +13,11 @@ export interface Client {
   inn: string | null;
   createdAt: string;
   updatedAt: string;
-  parentId: string | null;
   regionId: string | null;
+  parentId: string | null;
 }
 
-export interface ClientSelectOption {
+export interface ParentClientOption {
   clientId: string;
   name: string;
 }
@@ -41,25 +41,22 @@ export interface ClientsFilters {
 export interface ClientsResponse {
   items: Client[];
   total: number;
-  limit: number;
-  offset: number;
 }
 
 export interface RegionsResponse {
   items: Region[];
 }
 
-export interface CreateClientDto {
+export interface CreateClient {
   name: string;
   fullName?: string | null;
   partyType: PartyType;
   inn?: string | null;
-  parentId?: string | null;
   regionId?: string | null;
+  parentId?: string | null;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface UpdateClientDto extends Partial<CreateClientDto> {}
+export type UpdateClient = Partial<CreateClient>;
 
 export interface ValidationErrorDetail {
   field: string;

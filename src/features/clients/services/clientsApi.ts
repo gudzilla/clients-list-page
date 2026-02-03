@@ -11,10 +11,9 @@ import type {
   ClientsResponse,
   CreateClient,
   UpdateClient,
-  ClientSelectOption,
+  ParentClientOption,
 } from '../types';
 
-// API функции
 async function fetchClients(filters: ClientsFilters): Promise<ClientsResponse> {
   const response = await apiClient.get<ClientsResponse>('/clients', {
     params: filters,
@@ -27,7 +26,7 @@ async function fetchClient(id: string): Promise<Client> {
   return response.data;
 }
 
-async function fetchClientSelectOptions(): Promise<ClientSelectOption[]> {
+async function fetchParentClientOptions(): Promise<ParentClientOption[]> {
   // NOTE: Текущая реализация некорректна. Требуется новый эндпойнт на бэкенде для получения данных.
   // А пока условно берем первые 20 клиентов из списка клиентов.
   const response = await apiClient.get<ClientsResponse>('/clients', {
@@ -72,22 +71,24 @@ export function useClients(filters: ClientsFilters) {
 export function useClient(id: string | null) {
   return useQuery({
     queryKey: ['client', id],
-    queryFn: () => fetchClient(id!),
+    queryFn: () => {
+      if (!id) throw new Error('Unexpected: id is missing');
+      return fetchClient(id);
+    },
     enabled: !!id,
   });
 }
 
-export function useClientSelectOptions() {
+export function useParentClientOptions() {
   return useQuery({
-    queryKey: ['client-select-options'],
-    queryFn: fetchClientSelectOptions,
+    queryKey: ['parent-client-options'],
+    queryFn: fetchParentClientOptions,
     enabled: false,
     gcTime: 0,
     staleTime: 0,
   });
 }
 
-// Create client - простая мутация с инвалидацией кэша
 export function useCreateClient() {
   const queryClient = useQueryClient();
 
@@ -99,7 +100,6 @@ export function useCreateClient() {
   });
 }
 
-// Update client - простая мутация с инвалидацией кэша
 export function useUpdateClient() {
   const queryClient = useQueryClient();
 
@@ -111,7 +111,6 @@ export function useUpdateClient() {
   });
 }
 
-// Delete client - простая мутация с инвалидацией кэша
 export function useDeleteClient() {
   const queryClient = useQueryClient();
 

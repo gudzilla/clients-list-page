@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
-import { useClientSelectOptions } from '../services/clientsApi';
+import { useParentClientOptions } from '../services/clientsApi';
 import { useRegions } from '../services/regionsApi';
 import { useDebounce } from '../../../hooks/useDebounce';
 import { type ClientsFilters as FiltersType, type PartyType } from '../types';
@@ -35,7 +35,7 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
     refetch: fetchParentOptions,
     data: clientOptions = [],
     isFetching,
-  } = useClientSelectOptions();
+  } = useParentClientOptions();
   const { data: regions = [] } = useRegions();
 
   // Локальный стейт для мновенного отображения ввода

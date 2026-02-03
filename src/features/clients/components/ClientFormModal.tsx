@@ -18,7 +18,7 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useClientSelectOptions, useClient } from '../services/clientsApi';
+import { useParentClientOptions, useClient } from '../services/clientsApi';
 import { useRegions } from '../services/regionsApi';
 import {
   type Client,
@@ -65,7 +65,7 @@ export function ClientFormModal({
     refetch: fetchParentOptions,
     data: clientOptions = [],
     isFetching,
-  } = useClientSelectOptions();
+  } = useParentClientOptions();
   const { data: regions = [] } = useRegions();
   // Загружаем данные о родителе, если редактируем клиента с parentId
   const { data: initialParentClient } = useClient(client?.parentId || null);
