@@ -32,10 +32,13 @@ yarn-error.log*
 *.sw?
 
 # Project specific
-gemini.md
-agents.md
+# gemini.md
+# agents.md
 # server-api.md
 # server-errors.md
+
+*.md
+!README.md
 
 
 # BACKEND
