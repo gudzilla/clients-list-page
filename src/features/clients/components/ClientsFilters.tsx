@@ -16,7 +16,11 @@ import ClearIcon from '@mui/icons-material/Clear';
 import { useParentClientOptions } from '../services/clientsApi';
 import { useRegions } from '../services/regionsApi';
 import { useDebounce } from '../../../hooks/useDebounce';
-import { type ClientsFilters as FiltersType, type PartyType } from '../types';
+import {
+  type ClientsFilters as FiltersType,
+  type PartyType,
+  PARTY_TYPES,
+} from '../types';
 
 interface Props {
   filters: FiltersType;
@@ -26,8 +30,8 @@ interface Props {
 
 const PARTY_TYPE_OPTIONS = [
   { value: '', label: 'Все' },
-  { value: 'individual', label: 'Физическое лицо' },
-  { value: 'legal', label: 'Юридическое лицо' },
+  { value: PARTY_TYPES.INDIVIDUAL, label: 'Физическое лицо' },
+  { value: PARTY_TYPES.LEGAL, label: 'Юридическое лицо' },
 ];
 
 export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {

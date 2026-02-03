@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import type { Client, ClientsFilters } from '../types';
+import { type Client, type ClientsFilters, PARTY_TYPES } from '../types';
 
 interface Props {
   clients: Client[];
@@ -39,8 +39,8 @@ export function ClientsTable({
   onEdit,
   onDelete,
 }: Props) {
-  const page = Math.floor((filters.offset || 0) / (filters.limit || 10));
-  const rowsPerPage = filters.limit || 10;
+  const rowsPerPage = filters.limit || 20;
+  const page = Math.floor((filters.offset || 0) / rowsPerPage);
 
   const handleRequestSort = (property: SortableField) => {
     const isAsc = filters.sortBy === property && filters.sortOrder === 'asc';
@@ -146,10 +146,14 @@ export function ClientsTable({
                     <Chip
                       size="small"
                       label={
-                        client.partyType === 'legal' ? 'Юр. лицо' : 'Физ. лицо'
+                        client.partyType === PARTY_TYPES.LEGAL
+                          ? 'Юр. лицо'
+                          : 'Физ. лицо'
                       }
                       color={
-                        client.partyType === 'legal' ? 'primary' : 'secondary'
+                        client.partyType === PARTY_TYPES.LEGAL
+                          ? 'primary'
+                          : 'secondary'
                       }
                       variant="outlined"
                     />
@@ -184,7 +188,7 @@ export function ClientsTable({
       </TableContainer>
 
       <TablePagination
-        rowsPerPageOptions={[5, 10, 25]}
+        rowsPerPageOptions={[10, 20, 50, 100]}
         component="div"
         count={total}
         rowsPerPage={rowsPerPage}
