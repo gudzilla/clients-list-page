@@ -1,3 +1,7 @@
+/**
+ * Единый источник правды для типов сторон.
+ * Используем `as const` для обеспечения строгой типизации в TS и Zod.
+ */
 export const PARTY_TYPES = {
   INDIVIDUAL: 'individual',
   LEGAL: 'legal',
@@ -5,6 +9,10 @@ export const PARTY_TYPES = {
 
 export type PartyType = (typeof PARTY_TYPES)[keyof typeof PARTY_TYPES];
 
+/**
+ * Основная модель Клиента.
+ * Поля полностью соответствуют схеме БД (camelCase).
+ */
 export interface Client {
   clientId: string;
   name: string;
@@ -17,6 +25,10 @@ export interface Client {
   parentId: string | null;
 }
 
+/**
+ * Упрощенная модель для селекта родительской организации.
+ * Используется в useParentClientOptions для минимизации передаваемого по сети трафика.
+ */
 export interface ParentClientOption {
   clientId: string;
   name: string;
@@ -27,6 +39,11 @@ export interface Region {
   name: string;
 }
 
+/**
+ * Параметры фильтрации и пагинации.
+ * [REFACTOR]: Вместо offset лучше использовать page (Point 1),
+ * если мы хотим сделать URL более дружелюбным для пользователя (например, ?page=2 вместо ?offset=20).
+ */
 export interface ClientsFilters {
   query?: string;
   parentId?: string;
@@ -47,6 +64,10 @@ export interface RegionsResponse {
   items: Region[];
 }
 
+/**
+ * Данные для создания. Поля помечены как опциональные,
+ * так как бэкенд может принимать null, но Zod на фронте обеспечит доп. валидацию.
+ */
 export interface CreateClient {
   name: string;
   fullName?: string | null;
@@ -56,13 +77,24 @@ export interface CreateClient {
   parentId?: string | null;
 }
 
+/**
+ * Для обновления используем Partial от CreateClient,
+ * так как PATCH позволяет обновлять поля точечно.
+ */
 export type UpdateClient = Partial<CreateClient>;
 
+/**
+ * Структура детальной валидации полей (например, "inn": "Неверный формат").
+ */
 export interface ValidationErrorDetail {
   field: string;
   message: string;
 }
 
+/**
+ * Контракт ошибок бэкенда.
+ * Позволяет в ClientFormModal реализовать switch-case по errorName.
+ */
 export type BackendErrorName =
   | 'VALIDATION_ERROR'
   | 'INTERNAL_SERVER_ERROR'

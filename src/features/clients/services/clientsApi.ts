@@ -14,6 +14,12 @@ import type {
   ParentClientOption,
 } from '../types';
 
+/**
+ * ФУНКЦИИ-ФЕТЧЕРЫ
+ * Инкапсулируют логику запросов.
+ * Возвращают чистые данные (response.data), так как axios-интерцептор
+ * уже обработал потенциальные ошибки.
+ */
 async function fetchClients(filters: ClientsFilters): Promise<ClientsResponse> {
   const response = await apiClient.get<ClientsResponse>('/clients', {
     params: filters,
@@ -26,6 +32,10 @@ async function fetchClient(id: string): Promise<Client> {
   return response.data;
 }
 
+/**
+ * Метод для получения списка для селекта.
+ * Ограничиваем limit=20 для скорости, так как это вспомогательные данные.
+ */
 async function fetchParentClientOptions(): Promise<ParentClientOption[]> {
   const response = await apiClient.get<ClientsResponse>('/clients', {
     params: { limit: 20 },
@@ -57,10 +67,17 @@ async function deleteClient(id: string): Promise<void> {
   await apiClient.delete(`/clients/${id}`);
 }
 
+/**
+ * ХУКИ ДЛЯ ТАБЛИЦЫ
+ */
 export function useClients(filters: ClientsFilters) {
   return useQuery({
+    // Query Key включает фильтры: при изменении любого параметра (поиск, страница),
+    // React Query автоматически запустит новый fetch.
     queryKey: ['clients', filters],
     queryFn: () => fetchClients(filters),
+    // keepPreviousData: Позволяет не показывать лоадер "на всё окно" при переключении страниц,
+    // оставляя старые данные в таблице, пока грузятся новые.
     placeholderData: keepPreviousData,
   });
 }
@@ -72,20 +89,32 @@ export function useClient(id: string | null) {
       if (!id) throw new Error('Unexpected: id is missing');
       return fetchClient(id);
     },
-    enabled: !!id,
+    enabled: !!id, // Запрос не уйдет, пока нет ID
   });
 }
 
+/**
+ * ХУК ДЛЯ ДИНАМИЧЕСКОГО СЕЛЕКТА
+ * [MVP STRATEGY]: Запрос заблокирован по дефолту (enabled: false).
+ * Мы вызываем refetch() только при открытии выпадающего списка (onOpen).
+ * Это гарантирует актуальность данных без лишней нагрузки на бэк.
+ */
 export function useParentClientOptions() {
   return useQuery({
     queryKey: ['parent-client-options'],
     queryFn: fetchParentClientOptions,
     enabled: false,
-    gcTime: 0,
+    gcTime: 0, // Не храним в кэше долго, так как данные должны быть свежими
     staleTime: 0,
   });
 }
 
+/**
+ * МУТАЦИИ (CUD - Create, Update, Delete)
+ * После успешного изменения данных мы "инвалидируем" ключ 'clients'.
+ * Это заставляет таблицу автоматически перезапроситься, чтобы показать изменения
+ * с учетом текущей серверной сортировки.
+ */
 export function useCreateClient() {
   const queryClient = useQueryClient();
 
@@ -104,6 +133,8 @@ export function useUpdateClient() {
     mutationFn: updateClient,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
+      // Также инвалидируем конкретного клиента, если он где-то отображается отдельно
+      queryClient.invalidateQueries({ queryKey: ['client'] });
     },
   });
 }

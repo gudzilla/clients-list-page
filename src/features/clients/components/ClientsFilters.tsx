@@ -28,6 +28,10 @@ interface Props {
   onReset: () => void;
 }
 
+/**
+ * Варианты для статического селекта.
+ * [MVP]: Описаны в коде, так как это константные бизнес-данные.
+ */
 const PARTY_TYPE_OPTIONS = [
   { value: '', label: 'Все' },
   { value: PARTY_TYPES.INDIVIDUAL, label: 'Физическое лицо' },
@@ -35,17 +39,30 @@ const PARTY_TYPE_OPTIONS = [
 ];
 
 export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
+  // Хук для динамического селекта (запрос при открытии)
   const {
     refetch: fetchParentOptions,
     data: clientOptions = [],
     isFetching,
   } = useParentClientOptions();
+
+  // Хук для кэшируемого селекта (запрос 1 раз)
   const { data: regions = [] } = useRegions();
 
+  /**
+   * ЛОКАЛЬНОЕ СОСТОЯНИЕ ПОИСКА
+   * Мы не меняем URL при каждом нажатии клавиши (это было бы слишком дорого для производительности).
+   * Вместо этого мы храним текст в localQuery.
+   */
   const [localQuery, setLocalQuery] = useState(filters.query || '');
 
+  // Применяем дебаунс в 500мс
   const debouncedQuery = useDebounce(localQuery, 500);
 
+  /**
+   * Синхронизация: если URL изменился извне (например, нажали "Назад"),
+   * мы обновляем локальное поле.
+   */
   useEffect(() => {
     if (filters.query !== localQuery) {
       setLocalQuery(filters.query || '');
@@ -53,6 +70,9 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.query]);
 
+  /**
+   * Применение поиска: когда дебаунс "отстрелял", мы обновляем фильтры в URL.
+   */
   useEffect(() => {
     if (debouncedQuery !== (filters.query || '')) {
       onFiltersChange({ ...filters, query: debouncedQuery });
@@ -70,6 +90,10 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
     onReset();
   };
 
+  /**
+   * Реализация динамического селекта (Point "каждый раз"):
+   * Вызываем fetch только в момент открытия выпадающего списка.
+   */
   const handleOpenParentSelect = () => {
     fetchParentOptions();
   };
@@ -81,6 +105,7 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
 
   return (
     <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 3 }}>
+      {/* 1. Текстовый поиск с дебаунсом */}
       <TextField
         size="small"
         placeholder="Поиск по названию..."
@@ -110,6 +135,7 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
         sx={{ flex: '0 0 250px' }}
       />
 
+      {/* 2. Динамический селект (Родительский клиент) */}
       <Autocomplete
         size="small"
         options={isFetching ? [] : clientOptions}
@@ -132,6 +158,7 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
         sx={{ minWidth: 250 }}
       />
 
+      {/* 3. Кэшируемый селект (Регион) */}
       <Autocomplete
         size="small"
         options={regions}
@@ -147,6 +174,7 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
         sx={{ minWidth: 200 }}
       />
 
+      {/* 4. Статичный селект (Тип стороны) */}
       <FormControl size="small" sx={{ minWidth: 180 }}>
         <InputLabel>Тип стороны</InputLabel>
         <Select

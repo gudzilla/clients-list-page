@@ -28,7 +28,8 @@ interface Props {
   onDelete: (client: Client) => void;
 }
 
-type SortableField = 'name' | 'fullName' | 'inn' | 'createdAt';
+// [TABLE SORTING]: Список полей, по которым бэкенд умеет сортировать.
+// type SortableField = 'name' | 'fullName' | 'inn' | 'createdAt';
 
 export function ClientsTable({
   clients,
@@ -42,6 +43,12 @@ export function ClientsTable({
   const rowsPerPage = filters.limit || 20;
   const page = Math.floor((filters.offset || 0) / rowsPerPage);
 
+  /**
+   * [TABLE SORTING]: Логика переключения направления сортировки.
+   * Без неё компонент становится чище, но мы теряем возможность 
+   * управлять порядком вывода данных с бэкенда.
+   */
+  /*
   const handleRequestSort = (property: SortableField) => {
     const isAsc = filters.sortBy === property && filters.sortOrder === 'asc';
     onFiltersChange({
@@ -50,6 +57,7 @@ export function ClientsTable({
       sortOrder: isAsc ? 'desc' : 'asc',
     });
   };
+  */
 
   const handleChangePage = (_: unknown, newPage: number) => {
     onFiltersChange({
@@ -65,12 +73,13 @@ export function ClientsTable({
     onFiltersChange({
       ...filters,
       limit: newLimit,
-      offset: 0,
+      offset: 0, // При смене лимита всегда возвращаемся на первую страницу
     });
   };
 
   return (
     <Paper sx={{ width: '100%', overflow: 'hidden' }}>
+      {/* Линия загрузки под шапкой для индикации фонового обновления данных */}
       {loading && <LinearProgress />}
 
       <TableContainer sx={{ maxHeight: 600 }}>
@@ -78,6 +87,8 @@ export function ClientsTable({
           <TableHead>
             <TableRow>
               <TableCell>
+                {/* [TABLE SORTING]: Без TableSortLabel код становится декларативным, но статичным */}
+                {/* 
                 <TableSortLabel
                   active={filters.sortBy === 'name'}
                   direction={
@@ -87,8 +98,11 @@ export function ClientsTable({
                 >
                   Название
                 </TableSortLabel>
+                */}
+                Название
               </TableCell>
               <TableCell>
+                {/* 
                 <TableSortLabel
                   active={filters.sortBy === 'fullName'}
                   direction={
@@ -98,9 +112,12 @@ export function ClientsTable({
                 >
                   Полное название
                 </TableSortLabel>
+                */}
+                Полное название
               </TableCell>
               <TableCell>Тип</TableCell>
               <TableCell>
+                {/* 
                 <TableSortLabel
                   active={filters.sortBy === 'inn'}
                   direction={
@@ -110,8 +127,11 @@ export function ClientsTable({
                 >
                   ИНН
                 </TableSortLabel>
+                */}
+                ИНН
               </TableCell>
               <TableCell>
+                {/* 
                 <TableSortLabel
                   active={filters.sortBy === 'createdAt'}
                   direction={
@@ -121,6 +141,8 @@ export function ClientsTable({
                 >
                   Создан
                 </TableSortLabel>
+                */}
+                Создан
               </TableCell>
               <TableCell align="right">Действия</TableCell>
             </TableRow>
@@ -143,6 +165,7 @@ export function ClientsTable({
                   <TableCell>{client.name}</TableCell>
                   <TableCell>{client.fullName || '-'}</TableCell>
                   <TableCell>
+                    {/* Визуальное разделение типов через Chip */}
                     <Chip
                       size="small"
                       label={
@@ -168,6 +191,7 @@ export function ClientsTable({
                         size="small"
                         onClick={() => onEdit(client)}
                         color="primary"
+                        title="Редактировать"
                       >
                         <EditIcon fontSize="small" />
                       </IconButton>
@@ -175,6 +199,7 @@ export function ClientsTable({
                         size="small"
                         onClick={() => onDelete(client)}
                         color="error"
+                        title="Удалить"
                       >
                         <DeleteIcon fontSize="small" />
                       </IconButton>
@@ -187,6 +212,7 @@ export function ClientsTable({
         </Table>
       </TableContainer>
 
+      {/* Пагинация MUI, полностью контролируемая через пропсы */}
       <TablePagination
         rowsPerPageOptions={[10, 20, 50, 100]}
         component="div"
