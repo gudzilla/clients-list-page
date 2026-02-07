@@ -76,16 +76,12 @@ async function deleteClient(id: string): Promise<void> {
 }
 
 /**
- * ХУКИ ДЛЯ ТАБЛИЦЫ
+ * Получение списка клиентов с пагинацией и фильтрами.
  */
 export function useClients(filters: ClientsApiParams) {
   return useQuery({
-    // Query Key включает фильтры: при изменении любого параметра (поиск, страница),
-    // React Query автоматически запустит новый fetch.
     queryKey: ['clients', filters],
     queryFn: () => fetchClients(filters),
-    // keepPreviousData: Позволяет не показывать лоадер "на всё окно" при переключении страниц,
-    // оставляя старые данные в таблице, пока грузятся новые.
     placeholderData: keepPreviousData,
   });
 }
@@ -97,22 +93,20 @@ export function useClient(id: string | null) {
       if (!id) throw new Error('Unexpected: id is missing');
       return fetchClient(id);
     },
-    enabled: !!id, // Запрос не уйдет, пока нет ID
+    enabled: !!id,
   });
 }
 
 /**
- * ХУК ДЛЯ ДИНАМИЧЕСКОГО СЕЛЕКТА
- * [MVP STRATEGY]: Запрос заблокирован по дефолту (enabled: false).
- * Мы вызываем refetch() только при открытии выпадающего списка (onOpen).
- * Это гарантирует актуальность данных без лишней нагрузки на бэк.
+ * Опции для выбора родительского клиента.
+ * Загружаются по требованию.
  */
 export function useParentClientOptions() {
   return useQuery({
     queryKey: ['parent-client-options'],
     queryFn: fetchParentClientOptions,
     enabled: false,
-    gcTime: 0, // Не храним в кэше долго, так как данные должны быть свежими
+    gcTime: 0,
     staleTime: 0,
   });
 }

@@ -35,8 +35,8 @@ yarn-error.log*
 
 # Project specific
 *.md
+# !AGENTS.md
 !README.md
-!AGENTS.md
 
 # AI
 .claude/

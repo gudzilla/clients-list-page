@@ -35,30 +35,19 @@ const PARTY_TYPE_OPTIONS = [
 ];
 
 export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
-  // Хук для динамического селекта (запрос при открытии)
   const {
     refetch: fetchParentOptions,
     data: clientOptions = [],
     isFetching,
   } = useParentClientOptions();
 
-  // Хук для кэшируемого селекта (запрос 1 раз)
   const { data: regions = [] } = useRegions();
 
-  /**
-   * ЛОКАЛЬНОЕ СОСТОЯНИЕ ПОИСКА
-   * Мы не меняем URL при каждом нажатии клавиши (это было бы слишком дорого для производительности).
-   * Вместо этого мы храним текст в localQuery.
-   */
+  // Локальное состояние для дебаунса поиска
   const [localQuery, setLocalQuery] = useState(filters.query || '');
-
-  // Применяем дебаунс в 500мс
   const debouncedQuery = useDebounce(localQuery, 500);
 
-  /**
-   * Синхронизация: если URL изменился извне (например, нажали "Назад"),
-   * мы обновляем локальное поле.
-   */
+  // Синхронизация поля при изменении URL (кнопка "Назад")
   useEffect(() => {
     if (filters.query !== localQuery) {
       setLocalQuery(filters.query || '');
@@ -66,9 +55,7 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.query]);
 
-  /**
-   * Применение поиска: когда дебаунс "отстрелял", мы обновляем фильтры в URL.
-   */
+  // Применение поиска в URL
   useEffect(() => {
     if (debouncedQuery !== (filters.query || '')) {
       onFiltersChange({ query: debouncedQuery });
@@ -86,10 +73,7 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
     onReset();
   };
 
-  /**
-   * Реализация динамического селекта (Point "каждый раз"):
-   * Вызываем fetch только в момент открытия выпадающего списка.
-   */
+  // Загрузка опций при открытии списка
   const handleOpenParentSelect = () => {
     fetchParentOptions();
   };

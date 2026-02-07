@@ -28,9 +28,7 @@ import {
 } from '../types';
 
 /**
- * СХЕМА ВАЛИДАЦИИ (Zod)
- * Описываем правила прямо в компоненте для наглядности.
- * Преимущество: Типы для формы (FormData) выводятся автоматически из схемы.
+ * Схема валидации данных клиента.
  */
 const schema = z.object({
   name: z.string().min(1, 'Введите название').max(255),
@@ -54,9 +52,8 @@ type FormData = z.infer<typeof schema>;
 interface Props {
   open: boolean;
   onClose: () => void;
-  // onSubmit приходит из ClientsPage и выполняет реальный запрос к API
   onSubmit: (data: CreateClient) => Promise<void>;
-  client?: Client | null; // Если передан - режим редактирования
+  client?: Client | null;
   loading?: boolean;
 }
 
@@ -67,23 +64,15 @@ export function ClientFormModal({
   client,
   loading,
 }: Props) {
-  // Загрузка справочников
   const {
     refetch: fetchParentOptions,
     data: clientOptions = [],
     isFetching,
   } = useParentClientOptions();
   const { data: regions = [] } = useRegions();
-
-  // Дозагружаем данные родителя, если мы в режиме редактирования и у клиента есть parentId
   const { data: initialParentClient } = useClient(client?.parentId || null);
 
   const [genericError, setGenericError] = useState<string | null>(null);
-
-  /**
-   * Стейт для отслеживания изменения состояния "открыто/закрыто".
-   * Нужно для сброса ошибок при повторном открытии.
-   */
   const [prevOpen, setPrevOpen] = useState(open);
 
   if (open !== prevOpen) {
@@ -95,7 +84,7 @@ export function ClientFormModal({
 
   const {
     control,
-    handleSubmit, // Это функция-обертка от RHF для валидации
+    handleSubmit,
     reset,
     setError,
     formState: { errors },
@@ -111,16 +100,6 @@ export function ClientFormModal({
     },
   });
 
-  /**
-   * ИНИЦИАЛИЗАЦИЯ ДАННЫХ (Point 2)
-   * [LEGACY/MVP]: Синхронизируем стейт формы с пропсом `client`.
-   * При открытии модалки (open: true) мы либо сбрасываем форму в дефолт,
-   * либо заполняем данными существующего клиента.
-   *
-   * [REFACTOR]: (Point 4) Вместо этого useEffect лучше добавить `key={client?.clientId || 'new'}`
-   * на компонент Dialog или форму. React сам уничтожит и создаст компонент
-   * с новыми defaultValues при смене клиента, что уберет нужду в ручном reset().
-   */
   useEffect(() => {
     if (open) {
       if (client) {
@@ -145,16 +124,9 @@ export function ClientFormModal({
     }
   }, [open, client, reset]);
 
-  /**
-   * ОБРАБОТЧИК ОТПРАВКИ (Point 5)
-   * ВАЖНО: handleFormSubmit вызывается ТОЛЬКО если валидация Zod прошла успешно.
-   * handleSubmit(handleFormSubmit) — это цепочка:
-   * Проверка полей -> handleFormSubmit -> API запрос (через пропс onSubmit).
-   */
   const handleFormSubmit = async (data: FormData) => {
     setGenericError(null);
     try {
-      // Вызываем бизнес-логику сохранения, переданную сверху
       await onSubmit({
         name: data.name,
         fullName: data.fullName || null,
@@ -166,12 +138,6 @@ export function ClientFormModal({
     } catch (error: unknown) {
       const backendError = error as BackendErrorResponse;
 
-      /**
-       * ОТОБРАЖЕНИЕ ОШИБОК БЭКЕНДА (Point 3)
-       * Мы мапим серверные ошибки на конкретные поля формы.
-       * Например, если бэкенд сказал, что ИНН дублируется,
-       * мы подсвечиваем поле ИНН красным через setError.
-       */
       if (
         backendError &&
         typeof backendError === 'object' &&
@@ -188,7 +154,6 @@ export function ClientFormModal({
             setGenericError(backendError.message);
             break;
           case 'VALIDATION_ERROR':
-            // Массовая простановка ошибок полей от бэкенда
             if (backendError.errors) {
               backendError.errors.forEach((err) => {
                 const fieldName = err.field.split('.').pop() as keyof FormData;
@@ -209,7 +174,6 @@ export function ClientFormModal({
     }
   };
 
-  // Нельзя выбрать самого себя как родителя при редактировании
   const filteredClientOptions = client
     ? clientOptions.filter((c) => c.clientId !== client.clientId)
     : clientOptions;
@@ -220,10 +184,6 @@ export function ClientFormModal({
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      {/* 
-          Используем handleSubmit(handleFormSubmit) для интеграции с RHF. 
-          Валидация произойдет автоматически при нажатии на кнопку с type="submit".
-      */}
       <form onSubmit={handleSubmit(handleFormSubmit)}>
         <DialogTitle>
           {client ? 'Редактирование клиента' : 'Новый клиент'}
@@ -235,11 +195,6 @@ export function ClientFormModal({
                 {genericError}
               </Alert>
             )}
-
-            {/* 
-                Используем Controller для интеграции MUI компонентов с React Hook Form.
-                Это обеспечивает "контролируемость" инпутов без лишних useState.
-            */}
             <Controller
               name="name"
               control={control}
@@ -301,7 +256,6 @@ export function ClientFormModal({
               name="parentId"
               control={control}
               render={({ field }) => {
-                // Пытаемся найти текущее значение среди опций или дозагруженного родителя
                 const selectedParent =
                   clientOptions.find((c) => c.clientId === field.value) ||
                   (initialParentClient &&

@@ -7,7 +7,7 @@ import {
   TableRow,
   Paper,
   TablePagination,
-  // TableSortLabel,
+  TableSortLabel,
   IconButton,
   Chip,
   LinearProgress,
@@ -28,8 +28,8 @@ interface Props {
   onDelete: (client: Client) => void;
 }
 
-// [TABLE SORTING]: Список полей, по которым бэкенд умеет сортировать.
-// type SortableField = 'name' | 'fullName' | 'inn' | 'createdAt';
+// Список полей, по которым доступна сортировка на бэкенде.
+type SortableField = 'name' | 'fullName' | 'inn' | 'createdAt';
 
 const DEFAULT_PAGE_SIZE = 20;
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
@@ -47,20 +47,15 @@ export function ClientsTable({
   const MUITablePage = (filters.page || 1) - 1;
 
   /**
-   * [TABLE SORTING]: Логика переключения направления сортировки.
-   * Без неё компонент становится чище, но мы теряем возможность
-   * управлять порядком вывода данных с бэкенда.
+   * Обновляет параметры сортировки в URL.
    */
-  /*
   const handleRequestSort = (property: SortableField) => {
     const isAsc = filters.sortBy === property && filters.sortOrder === 'asc';
     onFiltersChange({
-       
       sortBy: property,
       sortOrder: isAsc ? 'desc' : 'asc',
     });
   };
-  */
 
   const handleChangePage = (_: unknown, newPage: number) => {
     onFiltersChange({
@@ -88,8 +83,6 @@ export function ClientsTable({
           <TableHead>
             <TableRow>
               <TableCell>
-                {/* [TABLE SORTING]: Без TableSortLabel код становится декларативным, но статичным */}
-                {/* 
                 <TableSortLabel
                   active={filters.sortBy === 'name'}
                   direction={
@@ -99,11 +92,8 @@ export function ClientsTable({
                 >
                   Название
                 </TableSortLabel>
-                */}
-                Название
               </TableCell>
               <TableCell>
-                {/* 
                 <TableSortLabel
                   active={filters.sortBy === 'fullName'}
                   direction={
@@ -113,12 +103,9 @@ export function ClientsTable({
                 >
                   Полное название
                 </TableSortLabel>
-                */}
-                Полное название
               </TableCell>
               <TableCell>Тип</TableCell>
               <TableCell>
-                {/* 
                 <TableSortLabel
                   active={filters.sortBy === 'inn'}
                   direction={
@@ -128,11 +115,8 @@ export function ClientsTable({
                 >
                   ИНН
                 </TableSortLabel>
-                */}
-                ИНН
               </TableCell>
               <TableCell>
-                {/* 
                 <TableSortLabel
                   active={filters.sortBy === 'createdAt'}
                   direction={
@@ -142,8 +126,6 @@ export function ClientsTable({
                 >
                   Создан
                 </TableSortLabel>
-                */}
-                Создан
               </TableCell>
               <TableCell align="right">Действия</TableCell>
             </TableRow>

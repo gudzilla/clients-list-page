@@ -22,15 +22,12 @@ import { useClientsFilters } from '../hooks/useClientsFilters';
 import type { Client, CreateClient, BackendErrorResponse } from '../types';
 
 /**
- * ГЛАВНАЯ СТРАНИЦА ФИЧИ
- * Роль компонента: Оркестрация. Он связывает URL-фильтры,
- * серверное состояние (Query/Mutations) и UI-компоненты.
+ * Страница управления списком клиентов.
+ * Оркестрирует работу фильтров, таблицы и модальных окон.
  */
 export function ClientsPage() {
-  // 1. Состояние фильтров (синхронизировано с URL)
   const { filters, updateFilters, resetFilters } = useClientsFilters();
 
-  // 2. Локальное UI-состояние (модалки, уведомления)
   const [formOpen, setFormOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -45,8 +42,6 @@ export function ClientsPage() {
     severity: 'success',
   });
 
-  // 3. Серверное состояние
-  // При изменении filters, useClients автоматически инициирует новый запрос.
   const { data, isFetching, error } = useClients(filters);
   const createMutation = useCreateClient();
   const updateMutation = useUpdateClient();
@@ -78,16 +73,10 @@ export function ClientsPage() {
   };
 
   /**
-   * Универсальный обработчик сохранения (создание или редактирование).
-   * Передается в ClientFormModal как пропс onSubmit.
+   * Сохранение данных клиента.
    */
   const handleSubmit = async (formData: CreateClient) => {
     if (editingClient) {
-      /**
-       * Используем mutateAsync вместо mutate, чтобы дождаться
-       * завершения запроса на бэкенде. Это позволяет нам
-       * показывать уведомление и закрывать модалку только ПОСЛЕ успешного ответа.
-       */
       await updateMutation.mutateAsync({
         id: editingClient.clientId,
         data: formData,
@@ -98,7 +87,6 @@ export function ClientsPage() {
         severity: 'success',
       });
     } else {
-      // Аналогично: ждем создания клиента перед закрытием формы
       await createMutation.mutateAsync(formData);
       setSnackbar({
         open: true,
@@ -110,10 +98,7 @@ export function ClientsPage() {
   };
 
   /**
-   * Обработка удаления.
-   * [REFACTOR]: (Point 3) Логика catch здесь "тяжелая".
-   * В идеале, обработка специфических ошибок (CLIENT_NOT_FOUND) должна быть
-   * скрыта внутри хука useDeleteClient или сервиса, чтобы компонент просто вызывал метод.
+   * Подтверждение удаления клиента.
    */
   const handleConfirmDelete = async () => {
     if (!deletingClient) return;
@@ -128,7 +113,6 @@ export function ClientsPage() {
       handleCloseDelete();
     } catch (err: unknown) {
       const backendError = err as BackendErrorResponse;
-      // Обработка кейса, когда кто-то другой уже удалил этого клиента
       if (
         backendError &&
         typeof backendError === 'object' &&
@@ -177,7 +161,6 @@ export function ClientsPage() {
         </Alert>
       )}
 
-      {/* Передаем функции обновления URL-фильтров */}
       <ClientsFilters
         filters={filters}
         onFiltersChange={updateFilters}
@@ -194,7 +177,6 @@ export function ClientsPage() {
         onDelete={handleOpenDelete}
       />
 
-      {/* Модалка формы. Мы передаем editingClient для режима редактирования */}
       <ClientFormModal
         open={formOpen}
         onClose={handleCloseForm}
@@ -211,7 +193,6 @@ export function ClientsPage() {
         onConfirm={handleConfirmDelete}
       />
 
-      {/* Общий компонент уведомлений */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}

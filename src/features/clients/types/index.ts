@@ -11,14 +11,12 @@ export type PartyType = (typeof PARTY_TYPES)[keyof typeof PARTY_TYPES];
 
 /**
  * Валидные значения для сортировки.
- * Используются в парсерах URL параметров для типобезопасной валидации.
  */
 export const VALID_SORT_ORDERS = ['asc', 'desc'] as const;
 export type SortOrder = (typeof VALID_SORT_ORDERS)[number];
 
 /**
- * Основная модель Клиента.
- * Поля полностью соответствуют схеме БД (camelCase).
+ * Модель Клиента (соответствует API бэкенда).
  */
 export interface Client {
   clientId: string;
@@ -33,8 +31,7 @@ export interface Client {
 }
 
 /**
- * Упрощенная модель для селекта родительской организации.
- * Используется в useParentClientOptions для минимизации передаваемого по сети трафика.
+ * Опция для селекта родительской организации.
  */
 export interface ParentClientOption {
   clientId: string;
@@ -47,9 +44,7 @@ export interface Region {
 }
 
 /**
- * Параметры фильтрации и пагинации.
- * [REFACTOR]: Вместо offset лучше использовать page (Point 1),
- * если мы хотим сделать URL более дружелюбным для пользователя (например, ?page=2 вместо ?offset=20).
+ * Параметры фильтрации и пагинации в URL.
  */
 export interface ClientsFilters {
   query?: string;
@@ -62,6 +57,9 @@ export interface ClientsFilters {
   sortOrder?: 'asc' | 'desc';
 }
 
+/**
+ * Параметры для сетевых запросов к API.
+ */
 export type ClientsApiParams = Omit<ClientsFilters, 'page' | 'pageSize'> & {
   limit?: number;
   offset?: number;
