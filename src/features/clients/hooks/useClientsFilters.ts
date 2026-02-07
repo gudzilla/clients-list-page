@@ -1,174 +1,159 @@
 import { useSearchParams } from 'react-router-dom';
 import { useMemo, useCallback } from 'react';
-import { PARTY_TYPES } from '../types';
+import { PARTY_TYPES, VALID_SORT_ORDERS } from '../types';
 import type { ClientsFilters, PartyType } from '../types';
 
-/**
- * Дефолтные значения фильтров.
- * Вынесены в константу для корректного сравнения и "очистки" URL от лишних параметров.
- */
 const DEFAULT_FILTERS: ClientsFilters = {
   limit: 20,
   offset: 0,
   sortBy: 'createdAt',
   sortOrder: 'desc',
 };
+
 /**
- * КЛЮЧЕВОЙ ХУК: Реализует паттерн "URL as a Single Source of Truth".
- * Вместо локального useState для фильтров, мы храним всё в поисковой строке браузера.
- * Это позволяет:
- * 1. Делиться ссылками с примененными фильтрами.
- * 2. Сохранять состояние при перезагрузке.
- * 3. Использовать нативную навигацию браузера (кнопка "Назад").
+ * Безопасный парсинг числа с fallback на дефолт.
+ */
+function parseNumber(value: string | null, defaultValue: number): number {
+  if (!value) return defaultValue;
+  const parsed = parseInt(value, 10);
+  return isNaN(parsed) ? defaultValue : parsed;
+}
+
+/**
+ * Type guard для проверки enum значений.
+ */
+function isValidEnum<T extends string>(
+  value: string | null,
+  validValues: readonly T[]
+): value is T {
+  return value !== null && validValues.includes(value as T);
+}
+
+/**
+ * Парсинг URL параметров в типизированный объект ClientsFilters.
+ */
+function parseFiltersFromUrl(
+  searchParams: URLSearchParams,
+  defaults: ClientsFilters
+): ClientsFilters {
+  const params: ClientsFilters = { ...defaults };
+
+  const limit = searchParams.get('limit');
+  if (limit) params.limit = parseNumber(limit, defaults.limit!);
+
+  const offset = searchParams.get('offset');
+  if (offset) params.offset = parseNumber(offset, defaults.offset!);
+
+  const sortBy = searchParams.get('sortBy');
+  if (sortBy) params.sortBy = sortBy;
+
+  const sortOrder = searchParams.get('sortOrder');
+  if (isValidEnum(sortOrder, VALID_SORT_ORDERS)) {
+    params.sortOrder = sortOrder;
+  }
+
+  const query = searchParams.get('query');
+  if (query) params.query = query;
+
+  const parentId = searchParams.get('parentId');
+  if (parentId) params.parentId = parentId;
+
+  const regionId = searchParams.get('regionId');
+  if (regionId) params.regionId = regionId;
+
+  const partyType = searchParams.get('partyType');
+  if (partyType === PARTY_TYPES.INDIVIDUAL || partyType === PARTY_TYPES.LEGAL) {
+    params.partyType = partyType as PartyType;
+  }
+
+  return params;
+}
+
+/**
+ * Проверяет изменение фильтров (не пагинации).
+ * Сравнивает РЕАЛЬНЫЕ значения, а не только наличие ключа.
+ */
+function hasFilterFieldChanges(
+  updates: Partial<ClientsFilters>,
+  current: ClientsFilters
+): boolean {
+  const filterKeys: (keyof ClientsFilters)[] = [
+    'query',
+    'parentId',
+    'regionId',
+    'partyType',
+    'limit',
+  ];
+
+  return filterKeys.some(
+    (key) => key in updates && updates[key] !== current[key]
+  );
+}
+
+/**
+ * Создает чистый URLSearchParams без дефолтных значений.
+ */
+function buildCleanUrlParams(
+  filters: ClientsFilters,
+  defaults: ClientsFilters
+): URLSearchParams {
+  const params = new URLSearchParams();
+
+  (Object.keys(filters) as (keyof ClientsFilters)[]).forEach((key) => {
+    const value = filters[key];
+    const defaultValue = defaults[key];
+
+    if (value !== undefined && value !== null && value !== '') {
+      if (value !== defaultValue) {
+        params.set(key, String(value));
+      }
+    }
+  });
+
+  return params;
+}
+
+/**
+ * Хук для работы с фильтрами через URL параметры.
+ * Реализует "URL as Single Source of Truth".
  */
 export function useClientsFilters() {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  /**
-   * Преобразование URLSearchParams в объект ClientsFilters.
-   * Обернуто в useMemo, так как этот объект является ключом для React Query (Query Key).
-   * Если объект будет пересоздаваться без изменений данных — это вызовет лишние сетевые запросы.
-   */
+  // Парсинг URL в объект фильтров (мемоизировано для React Query)
   const filters = useMemo((): ClientsFilters => {
-    const params: ClientsFilters = { ...DEFAULT_FILTERS };
-
-    // Парсинг числовых значений
-    const limit = searchParams.get('limit');
-    if (limit) params.limit = parseInt(limit, 10);
-
-    /**
-     * [REFACTOR]: (Point 1) Сейчас используется offset (смещение).
-     * Для UX лучше перевести это в `page`.
-     * Формула: offset = (page - 1) * limit.
-     */
-    const offset = searchParams.get('offset');
-    if (offset) params.offset = parseInt(offset, 10);
-
-    const sortBy = searchParams.get('sortBy');
-    if (sortBy) params.sortBy = sortBy;
-
-    const sortOrder = searchParams.get('sortOrder');
-    if (sortOrder === 'asc' || sortOrder === 'desc')
-      params.sortOrder = sortOrder;
-
-    const query = searchParams.get('query');
-    if (query) params.query = query;
-
-    const parentId = searchParams.get('parentId');
-    if (parentId) params.parentId = parentId;
-
-    const regionId = searchParams.get('regionId');
-    if (regionId) params.regionId = regionId;
-
-    const partyType = searchParams.get('partyType');
-    if (
-      partyType === PARTY_TYPES.INDIVIDUAL ||
-      partyType === PARTY_TYPES.LEGAL
-    ) {
-      params.partyType = partyType as PartyType;
-    }
-
-    return params;
+    return parseFiltersFromUrl(searchParams, DEFAULT_FILTERS);
   }, [searchParams]);
 
-  /**
-   * Умное обновление параметров.
-   * Функция не просто заменяет URL, а мержит изменения.
-   */
+  // Обновление фильтров с автоматическим сбросом пагинации
   const updateFilters = useCallback(
     (updates: Partial<ClientsFilters>) => {
       setSearchParams(
-        (prevParams: URLSearchParams) => {
-          const currentParams = new URLSearchParams(prevParams);
+        (prevParams) => {
+          const currentFilters = parseFiltersFromUrl(
+            prevParams,
+            DEFAULT_FILTERS
+          );
 
-          const getCurrentValue = (key: string): string | null =>
-            currentParams.get(key);
+          const nextFilters: ClientsFilters = { ...currentFilters, ...updates };
 
-          const keys: (keyof ClientsFilters)[] = [
-            'limit',
-            'offset',
-            'sortBy',
-            'sortOrder',
-            'query',
-            'parentId',
-            'regionId',
-            'partyType',
-          ];
+          // Сброс пагинации при изменении фильтра
+          const filterChanged = hasFilterFieldChanges(updates, currentFilters);
+          const offsetExplicitlySet = 'offset' in updates;
 
-          const nextValues: Record<string, string | number | undefined | null> =
-            {};
-
-          // Собираем актуальные значения (новые + текущие из URL)
-          keys.forEach((key) => {
-            if (key in updates) {
-              nextValues[key] = updates[key];
-            } else {
-              const valFromUrl = getCurrentValue(key);
-              if (valFromUrl !== null) {
-                nextValues[key] = valFromUrl;
-              } else {
-                nextValues[key] = undefined;
-              }
-            }
-          });
-
-          // СБРОС ПАГИНАЦИИ: Если изменился любой фильтр (кроме самой пагинации),
-          // мы должны вернуть пользователя на первую страницу (offset: 0).
-          const filterKeys: (keyof ClientsFilters)[] = [
-            'query',
-            'parentId',
-            'regionId',
-            'partyType',
-            'limit',
-          ];
-          const hasFilterChanges = filterKeys.some((key) => key in updates);
-
-          /**
-           * [ERROR]: Логическая ловушка.
-           * Если компонент вызывает updateFilters({...filters, query: 'new'}),
-           * то 'offset' уже ПРИСУТСТВУЕТ в updates (из-за деструктуризации старых фильтров).
-           * В этом случае условие !('offset' in updates) вернет false,
-           * и пагинация НЕ сбросится. Это приведет к тому, что пользователь
-           * может остаться на пустой странице при поиске.
-           *
-           * [FIX / SOLUTION]: Вместо проверки наличия ключа `in updates`,
-           * нужно сравнивать новое значение из `updates` с текущим из `filters`.
-           * Если значение фильтра РЕАЛЬНО изменилось — принудительно ставим offset: 0.
-           *
-           * Пример кода для фикса:
-           * const isRealChange = filterKeys.some(key => key in updates && updates[key] !== filters[key]);
-           * if (isRealChange) nextValues['offset'] = 0;
-           */
-          if (hasFilterChanges && !('offset' in updates)) {
-            nextValues['offset'] = 0;
+          if (filterChanged && !offsetExplicitlySet) {
+            nextFilters.offset = 0;
           }
-          const newParams = new URLSearchParams();
 
-          // CLEAN URL: Не добавляем в URL параметры, которые равны дефолтным.
-          // Это делает ссылки чище (вместо ?limit=20&offset=0 будет просто /)
-          keys.forEach((key) => {
-            let val = nextValues[key];
-            const defaultVal = DEFAULT_FILTERS[key];
-
-            if (val !== undefined && val !== null && val !== '') {
-              if (typeof defaultVal === 'number' && typeof val === 'string') {
-                val = parseInt(val, 10);
-              }
-
-              if (val !== defaultVal) {
-                newParams.set(key, String(val));
-              }
-            }
-          });
-
-          return newParams;
+          return buildCleanUrlParams(nextFilters, DEFAULT_FILTERS);
         },
-        { replace: true } // replace: true чтобы не спамить в историю браузера при каждом наборе в поиске
+        { replace: true }
       );
     },
     [setSearchParams]
   );
 
+  // Сброс всех фильтров
   const resetFilters = useCallback(() => {
     setSearchParams({}, { replace: true });
   }, [setSearchParams]);

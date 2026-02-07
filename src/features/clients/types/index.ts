@@ -10,6 +10,13 @@ export const PARTY_TYPES = {
 export type PartyType = (typeof PARTY_TYPES)[keyof typeof PARTY_TYPES];
 
 /**
+ * Валидные значения для сортировки.
+ * Используются в парсерах URL параметров для типобезопасной валидации.
+ */
+export const VALID_SORT_ORDERS = ['asc', 'desc'] as const;
+export type SortOrder = (typeof VALID_SORT_ORDERS)[number];
+
+/**
  * Основная модель Клиента.
  * Поля полностью соответствуют схеме БД (camelCase).
  */

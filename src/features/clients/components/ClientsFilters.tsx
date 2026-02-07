@@ -16,15 +16,11 @@ import ClearIcon from '@mui/icons-material/Clear';
 import { useParentClientOptions } from '../services/clientsApi';
 import { useRegions } from '../services/regionsApi';
 import { useDebounce } from '../../../hooks/useDebounce';
-import {
-  type ClientsFilters as FiltersType,
-  type PartyType,
-  PARTY_TYPES,
-} from '../types';
+import { type ClientsFilters, type PartyType, PARTY_TYPES } from '../types';
 
 interface Props {
-  filters: FiltersType;
-  onFiltersChange: (filters: FiltersType) => void;
+  filters: ClientsFilters;
+  onFiltersChange: (filters: Partial<ClientsFilters>) => void;
   onReset: () => void;
 }
 
@@ -75,14 +71,14 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
    */
   useEffect(() => {
     if (debouncedQuery !== (filters.query || '')) {
-      onFiltersChange({ ...filters, query: debouncedQuery });
+      onFiltersChange({ query: debouncedQuery });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedQuery]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      onFiltersChange({ ...filters, query: localQuery });
+      onFiltersChange({ query: localQuery });
     }
   };
 
@@ -146,7 +142,6 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
         value={selectedParent}
         onChange={(_, value) => {
           onFiltersChange({
-            ...filters,
             parentId: value?.clientId,
           });
         }}
@@ -166,7 +161,6 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
         value={selectedRegion}
         onChange={(_, value) => {
           onFiltersChange({
-            ...filters,
             regionId: value?.id,
           });
         }}
@@ -182,7 +176,6 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
           label="Тип стороны"
           onChange={(e) => {
             onFiltersChange({
-              ...filters,
               partyType: (e.target.value as PartyType) || undefined,
             });
           }}

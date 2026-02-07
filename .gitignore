@@ -36,6 +36,10 @@ yarn-error.log*
 # Project specific
 *.md
 !README.md
+!AGENTS.md
+
+# AI
+.claude/
 
 
 # BACKEND

@@ -7,7 +7,7 @@ import {
   TableRow,
   Paper,
   TablePagination,
-  TableSortLabel,
+  // TableSortLabel,
   IconButton,
   Chip,
   LinearProgress,
@@ -23,7 +23,7 @@ interface Props {
   total: number;
   loading: boolean;
   filters: ClientsFilters;
-  onFiltersChange: (filters: ClientsFilters) => void;
+  onFiltersChange: (filters: Partial<ClientsFilters>) => void;
   onEdit: (client: Client) => void;
   onDelete: (client: Client) => void;
 }
@@ -45,14 +45,14 @@ export function ClientsTable({
 
   /**
    * [TABLE SORTING]: Логика переключения направления сортировки.
-   * Без неё компонент становится чище, но мы теряем возможность 
+   * Без неё компонент становится чище, но мы теряем возможность
    * управлять порядком вывода данных с бэкенда.
    */
   /*
   const handleRequestSort = (property: SortableField) => {
     const isAsc = filters.sortBy === property && filters.sortOrder === 'asc';
     onFiltersChange({
-      ...filters,
+       
       sortBy: property,
       sortOrder: isAsc ? 'desc' : 'asc',
     });
@@ -61,7 +61,6 @@ export function ClientsTable({
 
   const handleChangePage = (_: unknown, newPage: number) => {
     onFiltersChange({
-      ...filters,
       offset: newPage * rowsPerPage,
     });
   };
@@ -71,7 +70,6 @@ export function ClientsTable({
   ) => {
     const newLimit = parseInt(event.target.value, 10);
     onFiltersChange({
-      ...filters,
       limit: newLimit,
       offset: 0, // При смене лимита всегда возвращаемся на первую страницу
     });
