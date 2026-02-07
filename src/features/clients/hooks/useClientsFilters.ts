@@ -1,81 +1,38 @@
-import { useSearchParams } from 'react-router-dom';
-import { useMemo, useCallback } from 'react';
-import { PARTY_TYPES, VALID_SORT_ORDERS } from '../types';
+import { useCallback } from 'react';
+import { PARTY_TYPES } from '../types';
 import type { ClientsFilters, PartyType } from '../types';
+import {
+  useQueryStates,
+  parseAsString,
+  parseAsInteger,
+  parseAsStringEnum,
+} from 'nuqs';
+import { type inferParserType } from 'nuqs/server';
 
-const DEFAULT_FILTERS: ClientsFilters = {
-  pageSize: 20,
-  page: 1,
-  sortBy: 'createdAt',
-  sortOrder: 'desc',
+const filtersParser = {
+  query: parseAsString,
+  parentId: parseAsString,
+  regionId: parseAsString,
+
+  partyType: parseAsStringEnum<PartyType>([
+    PARTY_TYPES.INDIVIDUAL,
+    PARTY_TYPES.LEGAL,
+  ]),
+
+  page: parseAsInteger.withDefault(1),
+  pageSize: parseAsInteger.withDefault(20),
+
+  sortBy: parseAsString.withDefault('createdAt'),
+  sortOrder: parseAsStringEnum(['asc', 'desc']).withDefault('desc'),
 };
 
-/**
- * Безопасный парсинг числа с fallback на дефолт.
- */
-function parseNumber(value: string | null, defaultValue: number): number {
-  if (!value) return defaultValue;
-  const parsed = parseInt(value, 10);
-  return isNaN(parsed) ? defaultValue : parsed;
-}
+type ParsedFilters = {
+  [K in keyof typeof filtersParser]: inferParserType<(typeof filtersParser)[K]>;
+};
 
-/**
- * Type guard для проверки enum значений.
- */
-function isValidEnum<T extends string>(
-  value: string | null,
-  validValues: readonly T[]
-): value is T {
-  return value !== null && validValues.includes(value as T);
-}
-
-/**
- * Парсинг URL параметров в типизированный объект ClientsFilters.
- */
-function parseFiltersFromUrl(
-  searchParams: URLSearchParams,
-  defaults: ClientsFilters
-): ClientsFilters {
-  const params: ClientsFilters = { ...defaults };
-
-  const pageSize = searchParams.get('pageSize');
-  if (pageSize) params.pageSize = parseNumber(pageSize, defaults.pageSize!);
-
-  const page = searchParams.get('page');
-  if (page) params.page = parseNumber(page, defaults.page!);
-
-  const sortBy = searchParams.get('sortBy');
-  if (sortBy) params.sortBy = sortBy;
-
-  const sortOrder = searchParams.get('sortOrder');
-  if (isValidEnum(sortOrder, VALID_SORT_ORDERS)) {
-    params.sortOrder = sortOrder;
-  }
-
-  const query = searchParams.get('query');
-  if (query) params.query = query;
-
-  const parentId = searchParams.get('parentId');
-  if (parentId) params.parentId = parentId;
-
-  const regionId = searchParams.get('regionId');
-  if (regionId) params.regionId = regionId;
-
-  const partyType = searchParams.get('partyType');
-  if (partyType === PARTY_TYPES.INDIVIDUAL || partyType === PARTY_TYPES.LEGAL) {
-    params.partyType = partyType as PartyType;
-  }
-
-  return params;
-}
-
-/**
- * Проверяет изменение фильтров (не пагинации).
- * Сравнивает РЕАЛЬНЫЕ значения, а не только наличие ключа.
- */
 function hasFilterFieldChanges(
   updates: Partial<ClientsFilters>,
-  current: ClientsFilters
+  current: ParsedFilters
 ): boolean {
   const filterKeys: (keyof ClientsFilters)[] = [
     'query',
@@ -90,73 +47,27 @@ function hasFilterFieldChanges(
   );
 }
 
-/**
- * Создает чистый URLSearchParams без дефолтных значений.
- */
-function buildCleanUrlParams(
-  filters: ClientsFilters,
-  defaults: ClientsFilters
-): URLSearchParams {
-  const params = new URLSearchParams();
-
-  (Object.keys(filters) as (keyof ClientsFilters)[]).forEach((key) => {
-    const value = filters[key];
-    const defaultValue = defaults[key];
-
-    if (value !== undefined && value !== null && value !== '') {
-      if (value !== defaultValue) {
-        params.set(key, String(value));
-      }
-    }
+export function useClientsFilters() {
+  const [filters, setFilters] = useQueryStates(filtersParser, {
+    history: 'replace',
   });
 
-  return params;
-}
-
-/**
- * Хук для работы с фильтрами через URL параметры.
- * Реализует "URL as Single Source of Truth".
- */
-export function useClientsFilters() {
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  // Парсинг URL в объект фильтров (мемоизировано для React Query)
-  const filters = useMemo((): ClientsFilters => {
-    return parseFiltersFromUrl(searchParams, DEFAULT_FILTERS);
-  }, [searchParams]);
-
-  // Обновление фильтров с автоматическим сбросом пагинации
   const updateFilters = useCallback(
     (updates: Partial<ClientsFilters>) => {
-      setSearchParams(
-        (prevParams) => {
-          const currentFilters = parseFiltersFromUrl(
-            prevParams,
-            DEFAULT_FILTERS
-          );
+      const filterChanged = hasFilterFieldChanges(updates, filters);
+      const pageExplicitlySet = 'page' in updates;
 
-          const nextFilters: ClientsFilters = { ...currentFilters, ...updates };
+      const nextUpdates =
+        filterChanged && !pageExplicitlySet ? { ...updates, page: 1 } : updates;
 
-          // Сброс пагинации при изменении фильтра
-          const filterChanged = hasFilterFieldChanges(updates, currentFilters);
-          const pageExplicitlySet = 'page' in updates;
-
-          if (filterChanged && !pageExplicitlySet) {
-            nextFilters.page = 1;
-          }
-
-          return buildCleanUrlParams(nextFilters, DEFAULT_FILTERS);
-        },
-        { replace: true }
-      );
+      setFilters(nextUpdates);
     },
-    [setSearchParams]
+    [filters, setFilters]
   );
 
-  // Сброс всех фильтров
   const resetFilters = useCallback(() => {
-    setSearchParams({}, { replace: true });
-  }, [setSearchParams]);
+    setFilters(null);
+  }, [setFilters]);
 
   return { filters, updateFilters, resetFilters };
 }
