@@ -1,132 +1,73 @@
-import { useSearchParams } from 'react-router-dom';
-import { useMemo, useCallback } from 'react';
+import { useCallback } from 'react';
 import { PARTY_TYPES } from '../types';
 import type { ClientsFilters, PartyType } from '../types';
+import {
+  useQueryStates,
+  parseAsString,
+  parseAsInteger,
+  parseAsStringEnum,
+} from 'nuqs';
+import { type inferParserType } from 'nuqs/server';
 
-const DEFAULT_FILTERS: ClientsFilters = {
-  limit: 20,
-  offset: 0,
-  sortBy: 'createdAt',
-  sortOrder: 'desc',
+const filtersParser = {
+  query: parseAsString,
+  parentId: parseAsString,
+  regionId: parseAsString,
+
+  partyType: parseAsStringEnum<PartyType>([
+    PARTY_TYPES.INDIVIDUAL,
+    PARTY_TYPES.LEGAL,
+  ]),
+
+  page: parseAsInteger.withDefault(1),
+  pageSize: parseAsInteger.withDefault(20),
+
+  sortBy: parseAsString.withDefault('createdAt'),
+  sortOrder: parseAsStringEnum(['asc', 'desc']).withDefault('desc'),
 };
 
+type ParsedFilters = {
+  [K in keyof typeof filtersParser]: inferParserType<(typeof filtersParser)[K]>;
+};
+
+function hasFilterFieldChanges(
+  updates: Partial<ClientsFilters>,
+  current: ParsedFilters
+): boolean {
+  const filterKeys: (keyof ClientsFilters)[] = [
+    'query',
+    'parentId',
+    'regionId',
+    'partyType',
+    'pageSize',
+  ];
+
+  return filterKeys.some(
+    (key) => key in updates && updates[key] !== current[key]
+  );
+}
+
 export function useClientsFilters() {
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  const filters = useMemo((): ClientsFilters => {
-    const params: ClientsFilters = { ...DEFAULT_FILTERS };
-
-    const limit = searchParams.get('limit');
-    if (limit) params.limit = parseInt(limit, 10);
-
-    const offset = searchParams.get('offset');
-    if (offset) params.offset = parseInt(offset, 10);
-
-    const sortBy = searchParams.get('sortBy');
-    if (sortBy) params.sortBy = sortBy;
-
-    const sortOrder = searchParams.get('sortOrder');
-    if (sortOrder === 'asc' || sortOrder === 'desc')
-      params.sortOrder = sortOrder;
-
-    const query = searchParams.get('query');
-    if (query) params.query = query;
-
-    const parentId = searchParams.get('parentId');
-    if (parentId) params.parentId = parentId;
-
-    const regionId = searchParams.get('regionId');
-    if (regionId) params.regionId = regionId;
-
-    const partyType = searchParams.get('partyType');
-    if (
-      partyType === PARTY_TYPES.INDIVIDUAL ||
-      partyType === PARTY_TYPES.LEGAL
-    ) {
-      params.partyType = partyType as PartyType;
-    }
-
-    return params;
-  }, [searchParams]);
+  const [filters, setFilters] = useQueryStates(filtersParser, {
+    history: 'replace',
+  });
 
   const updateFilters = useCallback(
     (updates: Partial<ClientsFilters>) => {
-      setSearchParams(
-        (prevParams: URLSearchParams) => {
-          const currentParams = new URLSearchParams(prevParams);
+      const filterChanged = hasFilterFieldChanges(updates, filters);
+      const pageExplicitlySet = 'page' in updates;
 
-          const getCurrentValue = (key: string): string | null =>
-            currentParams.get(key);
+      const nextUpdates =
+        filterChanged && !pageExplicitlySet ? { ...updates, page: 1 } : updates;
 
-          const keys: (keyof ClientsFilters)[] = [
-            'limit',
-            'offset',
-            'sortBy',
-            'sortOrder',
-            'query',
-            'parentId',
-            'regionId',
-            'partyType',
-          ];
-
-          const nextValues: Record<string, string | number | undefined | null> =
-            {};
-
-          keys.forEach((key) => {
-            if (key in updates) {
-              nextValues[key] = updates[key];
-            } else {
-              const valFromUrl = getCurrentValue(key);
-              if (valFromUrl !== null) {
-                nextValues[key] = valFromUrl;
-              } else {
-                nextValues[key] = undefined;
-              }
-            }
-          });
-
-          const filterKeys: (keyof ClientsFilters)[] = [
-            'query',
-            'parentId',
-            'regionId',
-            'partyType',
-            'limit',
-          ];
-          const hasFilterChanges = filterKeys.some((key) => key in updates);
-
-          if (hasFilterChanges && !('offset' in updates)) {
-            nextValues['offset'] = 0;
-          }
-
-          const newParams = new URLSearchParams();
-
-          keys.forEach((key) => {
-            let val = nextValues[key];
-
-            const defaultVal = DEFAULT_FILTERS[key];
-
-            if (val !== undefined && val !== null && val !== '') {
-              if (typeof defaultVal === 'number' && typeof val === 'string') {
-                val = parseInt(val, 10);
-              }
-
-              if (val !== defaultVal) {
-                newParams.set(key, String(val));
-              }
-            }
-          });
-
-          return newParams;
-        },
-        { replace: true }
-      );
+      setFilters(nextUpdates);
     },
-    [setSearchParams]
+    [filters, setFilters]
   );
 
   const resetFilters = useCallback(() => {
-    setSearchParams({}, { replace: true });
-  }, [setSearchParams]);
+    setFilters(null);
+  }, [setFilters]);
 
   return { filters, updateFilters, resetFilters };
 }

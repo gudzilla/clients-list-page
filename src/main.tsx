@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
+import { NuqsAdapter } from 'nuqs/adapters/react';
 import App from './App.tsx';
 
 const queryClient = new QueryClient({
@@ -26,7 +27,9 @@ createRoot(document.getElementById('root')!).render(
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <BrowserRouter>
-          <App />
+          <NuqsAdapter>
+            <App />
+          </NuqsAdapter>
         </BrowserRouter>
       </ThemeProvider>
     </QueryClientProvider>

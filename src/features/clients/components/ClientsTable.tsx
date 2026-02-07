@@ -23,12 +23,16 @@ interface Props {
   total: number;
   loading: boolean;
   filters: ClientsFilters;
-  onFiltersChange: (filters: ClientsFilters) => void;
+  onFiltersChange: (filters: Partial<ClientsFilters>) => void;
   onEdit: (client: Client) => void;
   onDelete: (client: Client) => void;
 }
 
+// Список полей, по которым доступна сортировка на бэкенде.
 type SortableField = 'name' | 'fullName' | 'inn' | 'createdAt';
+
+const DEFAULT_PAGE_SIZE = 20;
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 export function ClientsTable({
   clients,
@@ -39,13 +43,15 @@ export function ClientsTable({
   onEdit,
   onDelete,
 }: Props) {
-  const rowsPerPage = filters.limit || 20;
-  const page = Math.floor((filters.offset || 0) / rowsPerPage);
+  const pageSize = filters.pageSize || DEFAULT_PAGE_SIZE;
+  const MUITablePage = (filters.page || 1) - 1;
 
+  /**
+   * Обновляет параметры сортировки в URL.
+   */
   const handleRequestSort = (property: SortableField) => {
     const isAsc = filters.sortBy === property && filters.sortOrder === 'asc';
     onFiltersChange({
-      ...filters,
       sortBy: property,
       sortOrder: isAsc ? 'desc' : 'asc',
     });
@@ -53,24 +59,23 @@ export function ClientsTable({
 
   const handleChangePage = (_: unknown, newPage: number) => {
     onFiltersChange({
-      ...filters,
-      offset: newPage * rowsPerPage,
+      page: newPage + 1,
     });
   };
 
   const handleChangeRowsPerPage = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
-    const newLimit = parseInt(event.target.value, 10);
+    const newPageSize = parseInt(event.target.value, 10);
     onFiltersChange({
-      ...filters,
-      limit: newLimit,
-      offset: 0,
+      pageSize: newPageSize,
+      page: 1,
     });
   };
 
   return (
     <Paper sx={{ width: '100%', overflow: 'hidden' }}>
+      {/* Линия загрузки под шапкой для индикации фонового обновления данных */}
       {loading && <LinearProgress />}
 
       <TableContainer sx={{ maxHeight: 600 }}>
@@ -143,6 +148,7 @@ export function ClientsTable({
                   <TableCell>{client.name}</TableCell>
                   <TableCell>{client.fullName || '-'}</TableCell>
                   <TableCell>
+                    {/* Визуальное разделение типов через Chip */}
                     <Chip
                       size="small"
                       label={
@@ -168,6 +174,7 @@ export function ClientsTable({
                         size="small"
                         onClick={() => onEdit(client)}
                         color="primary"
+                        title="Редактировать"
                       >
                         <EditIcon fontSize="small" />
                       </IconButton>
@@ -175,6 +182,7 @@ export function ClientsTable({
                         size="small"
                         onClick={() => onDelete(client)}
                         color="error"
+                        title="Удалить"
                       >
                         <DeleteIcon fontSize="small" />
                       </IconButton>
@@ -187,12 +195,13 @@ export function ClientsTable({
         </Table>
       </TableContainer>
 
+      {/* Пагинация MUI, полностью контролируемая через пропсы */}
       <TablePagination
-        rowsPerPageOptions={[10, 20, 50, 100]}
+        rowsPerPageOptions={PAGE_SIZE_OPTIONS}
         component="div"
         count={total}
-        rowsPerPage={rowsPerPage}
-        page={page}
+        rowsPerPage={pageSize}
+        page={MUITablePage}
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
         labelRowsPerPage="Строк на странице:"

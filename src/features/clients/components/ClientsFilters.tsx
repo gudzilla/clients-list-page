@@ -16,18 +16,18 @@ import ClearIcon from '@mui/icons-material/Clear';
 import { useParentClientOptions } from '../services/clientsApi';
 import { useRegions } from '../services/regionsApi';
 import { useDebounce } from '../../../hooks/useDebounce';
-import {
-  type ClientsFilters as FiltersType,
-  type PartyType,
-  PARTY_TYPES,
-} from '../types';
+import { type ClientsFilters, type PartyType, PARTY_TYPES } from '../types';
 
 interface Props {
-  filters: FiltersType;
-  onFiltersChange: (filters: FiltersType) => void;
+  filters: ClientsFilters;
+  onFiltersChange: (filters: Partial<ClientsFilters>) => void;
   onReset: () => void;
 }
 
+/**
+ * Варианты для статического селекта.
+ * [MVP]: Описаны в коде, так как это константные бизнес-данные.
+ */
 const PARTY_TYPE_OPTIONS = [
   { value: '', label: 'Все' },
   { value: PARTY_TYPES.INDIVIDUAL, label: 'Физическое лицо' },
@@ -40,12 +40,14 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
     data: clientOptions = [],
     isFetching,
   } = useParentClientOptions();
+
   const { data: regions = [] } = useRegions();
 
+  // Локальное состояние для дебаунса поиска
   const [localQuery, setLocalQuery] = useState(filters.query || '');
-
   const debouncedQuery = useDebounce(localQuery, 500);
 
+  // Синхронизация поля при изменении URL (кнопка "Назад")
   useEffect(() => {
     if (filters.query !== localQuery) {
       setLocalQuery(filters.query || '');
@@ -53,16 +55,17 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.query]);
 
+  // Применение поиска в URL
   useEffect(() => {
     if (debouncedQuery !== (filters.query || '')) {
-      onFiltersChange({ ...filters, query: debouncedQuery });
+      onFiltersChange({ query: debouncedQuery });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedQuery]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      onFiltersChange({ ...filters, query: localQuery });
+      onFiltersChange({ query: localQuery });
     }
   };
 
@@ -70,6 +73,7 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
     onReset();
   };
 
+  // Загрузка опций при открытии списка
   const handleOpenParentSelect = () => {
     fetchParentOptions();
   };
@@ -81,6 +85,7 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
 
   return (
     <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 3 }}>
+      {/* 1. Текстовый поиск с дебаунсом */}
       <TextField
         size="small"
         placeholder="Поиск по названию..."
@@ -110,6 +115,7 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
         sx={{ flex: '0 0 250px' }}
       />
 
+      {/* 2. Динамический селект (Родительский клиент) */}
       <Autocomplete
         size="small"
         options={isFetching ? [] : clientOptions}
@@ -120,7 +126,6 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
         value={selectedParent}
         onChange={(_, value) => {
           onFiltersChange({
-            ...filters,
             parentId: value?.clientId,
           });
         }}
@@ -132,6 +137,7 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
         sx={{ minWidth: 250 }}
       />
 
+      {/* 3. Кэшируемый селект (Регион) */}
       <Autocomplete
         size="small"
         options={regions}
@@ -139,7 +145,6 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
         value={selectedRegion}
         onChange={(_, value) => {
           onFiltersChange({
-            ...filters,
             regionId: value?.id,
           });
         }}
@@ -147,6 +152,7 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
         sx={{ minWidth: 200 }}
       />
 
+      {/* 4. Статичный селект (Тип стороны) */}
       <FormControl size="small" sx={{ minWidth: 180 }}>
         <InputLabel>Тип стороны</InputLabel>
         <Select
@@ -154,7 +160,6 @@ export function ClientsFilters({ filters, onFiltersChange, onReset }: Props) {
           label="Тип стороны"
           onChange={(e) => {
             onFiltersChange({
-              ...filters,
               partyType: (e.target.value as PartyType) || undefined,
             });
           }}

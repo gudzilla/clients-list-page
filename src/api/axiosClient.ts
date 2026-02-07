@@ -8,6 +8,10 @@ export const apiClient = axios.create({
   },
 });
 
+/**
+ * Унификация ошибок бэкенда.
+ * Прокидывает типизированный BackendErrorResponse для обработки в компонентах.
+ */
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError<BackendErrorResponse>) => {

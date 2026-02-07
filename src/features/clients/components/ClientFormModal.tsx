@@ -27,6 +27,9 @@ import {
   PARTY_TYPES,
 } from '../types';
 
+/**
+ * Схема валидации данных клиента.
+ */
 const schema = z.object({
   name: z.string().min(1, 'Введите название').max(255),
   fullName: z.string().max(255).optional(),

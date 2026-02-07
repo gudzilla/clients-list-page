@@ -1,3 +1,7 @@
+/**
+ * Единый источник правды для типов сторон.
+ * Используем `as const` для обеспечения строгой типизации в TS и Zod.
+ */
 export const PARTY_TYPES = {
   INDIVIDUAL: 'individual',
   LEGAL: 'legal',
@@ -5,6 +9,15 @@ export const PARTY_TYPES = {
 
 export type PartyType = (typeof PARTY_TYPES)[keyof typeof PARTY_TYPES];
 
+/**
+ * Валидные значения для сортировки.
+ */
+export const VALID_SORT_ORDERS = ['asc', 'desc'] as const;
+export type SortOrder = (typeof VALID_SORT_ORDERS)[number];
+
+/**
+ * Модель Клиента (соответствует API бэкенда).
+ */
 export interface Client {
   clientId: string;
   name: string;
@@ -17,6 +30,9 @@ export interface Client {
   parentId: string | null;
 }
 
+/**
+ * Опция для селекта родительской организации.
+ */
 export interface ParentClientOption {
   clientId: string;
   name: string;
@@ -27,16 +43,27 @@ export interface Region {
   name: string;
 }
 
+/**
+ * Параметры фильтрации и пагинации в URL.
+ */
 export interface ClientsFilters {
   query?: string;
   parentId?: string;
   regionId?: string;
   partyType?: PartyType;
-  limit?: number;
-  offset?: number;
+  page?: number;
+  pageSize?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }
+
+/**
+ * Параметры для сетевых запросов к API.
+ */
+export type ClientsApiParams = Omit<ClientsFilters, 'page' | 'pageSize'> & {
+  limit?: number;
+  offset?: number;
+};
 
 export interface ClientsResponse {
   items: Client[];
@@ -47,6 +74,10 @@ export interface RegionsResponse {
   items: Region[];
 }
 
+/**
+ * Данные для создания. Поля помечены как опциональные,
+ * так как бэкенд может принимать null, но Zod на фронте обеспечит доп. валидацию.
+ */
 export interface CreateClient {
   name: string;
   fullName?: string | null;
@@ -56,13 +87,24 @@ export interface CreateClient {
   parentId?: string | null;
 }
 
+/**
+ * Для обновления используем Partial от CreateClient,
+ * так как PATCH позволяет обновлять поля точечно.
+ */
 export type UpdateClient = Partial<CreateClient>;
 
+/**
+ * Структура детальной валидации полей (например, "inn": "Неверный формат").
+ */
 export interface ValidationErrorDetail {
   field: string;
   message: string;
 }
 
+/**
+ * Контракт ошибок бэкенда.
+ * Позволяет в ClientFormModal реализовать switch-case по errorName.
+ */
 export type BackendErrorName =
   | 'VALIDATION_ERROR'
   | 'INTERNAL_SERVER_ERROR'

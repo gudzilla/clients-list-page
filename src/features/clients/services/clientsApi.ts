@@ -12,11 +12,25 @@ import type {
   CreateClient,
   UpdateClient,
   ParentClientOption,
+  ClientsApiParams,
 } from '../types';
 
+/**
+ * ФУНКЦИИ-ФЕТЧЕРЫ
+ * Инкапсулируют логику запросов.
+ * Возвращают чистые данные (response.data), так как axios-интерцептор
+ * уже обработал потенциальные ошибки.
+ */
 async function fetchClients(filters: ClientsFilters): Promise<ClientsResponse> {
+  const { page = 1, pageSize = 20, ...rest } = filters;
+  const apiParams: ClientsApiParams = {
+    ...rest,
+    limit: pageSize,
+    offset: (page - 1) * pageSize,
+  };
+
   const response = await apiClient.get<ClientsResponse>('/clients', {
-    params: filters,
+    params: apiParams,
   });
   return response.data;
 }
@@ -26,6 +40,10 @@ async function fetchClient(id: string): Promise<Client> {
   return response.data;
 }
 
+/**
+ * Метод для получения списка для селекта.
+ * Ограничиваем limit=20 для скорости, так как это вспомогательные данные.
+ */
 async function fetchParentClientOptions(): Promise<ParentClientOption[]> {
   const response = await apiClient.get<ClientsResponse>('/clients', {
     params: { limit: 20 },
@@ -57,7 +75,10 @@ async function deleteClient(id: string): Promise<void> {
   await apiClient.delete(`/clients/${id}`);
 }
 
-export function useClients(filters: ClientsFilters) {
+/**
+ * Получение списка клиентов с пагинацией и фильтрами.
+ */
+export function useClients(filters: ClientsApiParams) {
   return useQuery({
     queryKey: ['clients', filters],
     queryFn: () => fetchClients(filters),
@@ -76,6 +97,10 @@ export function useClient(id: string | null) {
   });
 }
 
+/**
+ * Опции для выбора родительского клиента.
+ * Загружаются по требованию.
+ */
 export function useParentClientOptions() {
   return useQuery({
     queryKey: ['parent-client-options'],
@@ -86,6 +111,12 @@ export function useParentClientOptions() {
   });
 }
 
+/**
+ * МУТАЦИИ (CUD - Create, Update, Delete)
+ * После успешного изменения данных мы "инвалидируем" ключ 'clients'.
+ * Это заставляет таблицу автоматически перезапроситься, чтобы показать изменения
+ * с учетом текущей серверной сортировки.
+ */
 export function useCreateClient() {
   const queryClient = useQueryClient();
 
@@ -104,6 +135,8 @@ export function useUpdateClient() {
     mutationFn: updateClient,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
+      // Также инвалидируем конкретного клиента, если он где-то отображается отдельно
+      queryClient.invalidateQueries({ queryKey: ['client'] });
     },
   });
 }
