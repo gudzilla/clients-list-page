@@ -4,8 +4,8 @@ import { PARTY_TYPES, VALID_SORT_ORDERS } from '../types';
 import type { ClientsFilters, PartyType } from '../types';
 
 const DEFAULT_FILTERS: ClientsFilters = {
-  limit: 20,
-  offset: 0,
+  pageSize: 20,
+  page: 1,
   sortBy: 'createdAt',
   sortOrder: 'desc',
 };
@@ -38,11 +38,11 @@ function parseFiltersFromUrl(
 ): ClientsFilters {
   const params: ClientsFilters = { ...defaults };
 
-  const limit = searchParams.get('limit');
-  if (limit) params.limit = parseNumber(limit, defaults.limit!);
+  const pageSize = searchParams.get('pageSize');
+  if (pageSize) params.pageSize = parseNumber(pageSize, defaults.pageSize!);
 
-  const offset = searchParams.get('offset');
-  if (offset) params.offset = parseNumber(offset, defaults.offset!);
+  const page = searchParams.get('page');
+  if (page) params.page = parseNumber(page, defaults.page!);
 
   const sortBy = searchParams.get('sortBy');
   if (sortBy) params.sortBy = sortBy;
@@ -82,7 +82,7 @@ function hasFilterFieldChanges(
     'parentId',
     'regionId',
     'partyType',
-    'limit',
+    'pageSize',
   ];
 
   return filterKeys.some(
@@ -139,10 +139,10 @@ export function useClientsFilters() {
 
           // Сброс пагинации при изменении фильтра
           const filterChanged = hasFilterFieldChanges(updates, currentFilters);
-          const offsetExplicitlySet = 'offset' in updates;
+          const pageExplicitlySet = 'page' in updates;
 
-          if (filterChanged && !offsetExplicitlySet) {
-            nextFilters.offset = 0;
+          if (filterChanged && !pageExplicitlySet) {
+            nextFilters.page = 1;
           }
 
           return buildCleanUrlParams(nextFilters, DEFAULT_FILTERS);

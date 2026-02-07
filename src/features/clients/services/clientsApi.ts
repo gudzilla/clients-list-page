@@ -12,6 +12,7 @@ import type {
   CreateClient,
   UpdateClient,
   ParentClientOption,
+  ClientsApiParams,
 } from '../types';
 
 /**
@@ -21,8 +22,15 @@ import type {
  * уже обработал потенциальные ошибки.
  */
 async function fetchClients(filters: ClientsFilters): Promise<ClientsResponse> {
+  const { page = 1, pageSize = 20, ...rest } = filters;
+  const apiParams: ClientsApiParams = {
+    ...rest,
+    limit: pageSize,
+    offset: (page - 1) * pageSize,
+  };
+
   const response = await apiClient.get<ClientsResponse>('/clients', {
-    params: filters,
+    params: apiParams,
   });
   return response.data;
 }
@@ -70,7 +78,7 @@ async function deleteClient(id: string): Promise<void> {
 /**
  * ХУКИ ДЛЯ ТАБЛИЦЫ
  */
-export function useClients(filters: ClientsFilters) {
+export function useClients(filters: ClientsApiParams) {
   return useQuery({
     // Query Key включает фильтры: при изменении любого параметра (поиск, страница),
     // React Query автоматически запустит новый fetch.

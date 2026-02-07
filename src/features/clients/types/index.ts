@@ -56,11 +56,16 @@ export interface ClientsFilters {
   parentId?: string;
   regionId?: string;
   partyType?: PartyType;
-  limit?: number;
-  offset?: number;
+  page?: number;
+  pageSize?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }
+
+export type ClientsApiParams = Omit<ClientsFilters, 'page' | 'pageSize'> & {
+  limit?: number;
+  offset?: number;
+};
 
 export interface ClientsResponse {
   items: Client[];

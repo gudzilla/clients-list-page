@@ -31,6 +31,9 @@ interface Props {
 // [TABLE SORTING]: Список полей, по которым бэкенд умеет сортировать.
 // type SortableField = 'name' | 'fullName' | 'inn' | 'createdAt';
 
+const DEFAULT_PAGE_SIZE = 20;
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+
 export function ClientsTable({
   clients,
   total,
@@ -40,8 +43,8 @@ export function ClientsTable({
   onEdit,
   onDelete,
 }: Props) {
-  const rowsPerPage = filters.limit || 20;
-  const page = Math.floor((filters.offset || 0) / rowsPerPage);
+  const pageSize = filters.pageSize || DEFAULT_PAGE_SIZE;
+  const MUITablePage = (filters.page || 1) - 1;
 
   /**
    * [TABLE SORTING]: Логика переключения направления сортировки.
@@ -61,17 +64,17 @@ export function ClientsTable({
 
   const handleChangePage = (_: unknown, newPage: number) => {
     onFiltersChange({
-      offset: newPage * rowsPerPage,
+      page: newPage + 1,
     });
   };
 
   const handleChangeRowsPerPage = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
-    const newLimit = parseInt(event.target.value, 10);
+    const newPageSize = parseInt(event.target.value, 10);
     onFiltersChange({
-      limit: newLimit,
-      offset: 0, // При смене лимита всегда возвращаемся на первую страницу
+      pageSize: newPageSize,
+      page: 1,
     });
   };
 
@@ -212,11 +215,11 @@ export function ClientsTable({
 
       {/* Пагинация MUI, полностью контролируемая через пропсы */}
       <TablePagination
-        rowsPerPageOptions={[10, 20, 50, 100]}
+        rowsPerPageOptions={PAGE_SIZE_OPTIONS}
         component="div"
         count={total}
-        rowsPerPage={rowsPerPage}
-        page={page}
+        rowsPerPage={pageSize}
+        page={MUITablePage}
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
         labelRowsPerPage="Строк на странице:"
