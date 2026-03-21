@@ -7,10 +7,6 @@ async function fetchRegions(): Promise<Region[]> {
   return response.data.items;
 }
 
-/**
- * Справочник регионов.
- * Кешируется на все время сессии.
- */
 export function useRegions() {
   return useQuery({
     queryKey: ['regions'],

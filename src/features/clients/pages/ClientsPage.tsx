@@ -21,10 +21,6 @@ import {
 import { useClientsFilters } from '../hooks/useClientsFilters';
 import type { Client, CreateClient, BackendErrorResponse } from '../types';
 
-/**
- * Страница управления списком клиентов.
- * Оркестрирует работу фильтров, таблицы и модальных окон.
- */
 export function ClientsPage() {
   const { filters, updateFilters, resetFilters } = useClientsFilters();
 
@@ -72,9 +68,6 @@ export function ClientsPage() {
     setDeletingClient(null);
   };
 
-  /**
-   * Сохранение данных клиента.
-   */
   const handleSubmit = async (formData: CreateClient) => {
     if (editingClient) {
       await updateMutation.mutateAsync({
@@ -97,9 +90,6 @@ export function ClientsPage() {
     handleCloseForm();
   };
 
-  /**
-   * Подтверждение удаления клиента.
-   */
   const handleConfirmDelete = async () => {
     if (!deletingClient) return;
 

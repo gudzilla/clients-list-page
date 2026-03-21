@@ -28,7 +28,6 @@ interface Props {
   onDelete: (client: Client) => void;
 }
 
-// Список полей, по которым доступна сортировка на бэкенде.
 type SortableField = 'name' | 'fullName' | 'inn' | 'createdAt';
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -46,9 +45,6 @@ export function ClientsTable({
   const pageSize = filters.pageSize || DEFAULT_PAGE_SIZE;
   const MUITablePage = (filters.page || 1) - 1;
 
-  /**
-   * Обновляет параметры сортировки в URL.
-   */
   const handleRequestSort = (property: SortableField) => {
     const isAsc = filters.sortBy === property && filters.sortOrder === 'asc';
     onFiltersChange({
@@ -75,7 +71,6 @@ export function ClientsTable({
 
   return (
     <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-      {/* Линия загрузки под шапкой для индикации фонового обновления данных */}
       {loading && <LinearProgress />}
 
       <TableContainer sx={{ maxHeight: 600 }}>
@@ -148,7 +143,6 @@ export function ClientsTable({
                   <TableCell>{client.name}</TableCell>
                   <TableCell>{client.fullName || '-'}</TableCell>
                   <TableCell>
-                    {/* Визуальное разделение типов через Chip */}
                     <Chip
                       size="small"
                       label={
@@ -195,7 +189,6 @@ export function ClientsTable({
         </Table>
       </TableContainer>
 
-      {/* Пагинация MUI, полностью контролируемая через пропсы */}
       <TablePagination
         rowsPerPageOptions={PAGE_SIZE_OPTIONS}
         component="div"

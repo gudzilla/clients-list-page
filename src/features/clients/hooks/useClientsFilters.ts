@@ -54,15 +54,15 @@ export function useClientsFilters() {
 
   const updateFilters = useCallback(
     (updates: Partial<ClientsFilters>) => {
-      const filterChanged = hasFilterFieldChanges(updates, filters);
-      const pageExplicitlySet = 'page' in updates;
-
-      const nextUpdates =
-        filterChanged && !pageExplicitlySet ? { ...updates, page: 1 } : updates;
-
-      setFilters(nextUpdates);
+      setFilters((prev) => {
+        const filterChanged = hasFilterFieldChanges(updates, prev);
+        const pageExplicitlySet = 'page' in updates;
+        return filterChanged && !pageExplicitlySet
+          ? { ...updates, page: 1 }
+          : updates;
+      });
     },
-    [filters, setFilters]
+    [setFilters]
   );
 
   const resetFilters = useCallback(() => {
